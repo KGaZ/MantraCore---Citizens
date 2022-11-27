@@ -1,0 +1,6 @@
+main: me.kgaz.Citizens
+version: 1.0 Alfa
+name: MantraLibs
+author: KGaZ
+commands:
+  action:
