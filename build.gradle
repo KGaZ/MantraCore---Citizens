@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'me.kgaz'
-version 'Alpha 1.0'
+version 'Alpha 1.2'
 compileJava.options.encoding = 'UTF-8'
 sourceCompatibility = 8
 targetCompatibility = 8

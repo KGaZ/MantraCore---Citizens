@@ -36,6 +36,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     private static int TEAM_ID = 0;
 
+    private boolean removed;
+
     private Location location;
     private String name;
     private boolean visibleByDefault;
@@ -69,6 +71,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         texture = null;
         signature = null;
 
+        removed = false;
+
         longName = name.length() > 16;
 
         secondLine = null;
@@ -81,13 +85,28 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void setSecondLine(String line) {
 
-        if(spawned) return;
+        if(removed) return;
+
+        if(spawned) {
+
+            secondLine = line;
+
+            secondLineEntity.setCustomName(line);
+
+            PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), secondLineEntity.getDataWatcher(), true);
+
+            seenBy.forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet));
+
+            return;
+        }
 
         secondLine = line;
 
     }
 
     public void removeSecondLine() {
+
+        if(removed) return;
 
         if(spawned) return;
 
@@ -97,10 +116,14 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void remove() {
 
+        if(removed) return;
+
         despawn();
         main.getUserManager().unregisterPacketInListener(this);
         main.getUserManager().unregisterPacketOutListener(this);
         HandlerList.unregisterAll(this);
+
+        removed = true;
 
     }
 
@@ -242,6 +265,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void copySkin(Player player) {
 
+        if(removed) return;
+
         try {
 
             Property property = ((CraftPlayer)player).getProfile().getProperties().get("textures").iterator().next();
@@ -259,12 +284,16 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void setSkin(String texture, String signature) {
 
+        if(removed) return;
+
         this.texture = texture;
         this.signature = signature;
 
     }
 
     private void initEntity() {
+
+        if(removed) return;
 
         if(spawned) return;
 
@@ -305,6 +334,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void despawn(boolean particles) {
 
+        if(removed) return;
+
         if(spawned) {
 
             main.getGlobalTaskManager().unregister(this, true);
@@ -330,6 +361,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     }
 
     public void spawn() {
+
+        if(removed) return;
 
         if(!spawned) {
 
@@ -364,6 +397,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     }
 
     public void sendSpawnPackets(Player player) {
+
+        if(removed) return;
 
         PacketPlayOutNamedEntitySpawn packet = getSpawnPacket();
         PacketPlayOutPlayerInfo packetInfo = getSpawnInfoPacket();
@@ -499,6 +534,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent e) {
 
+        if(removed) return;
+
         if(e.getPlayer().getWorld() == location.getWorld() && e.getFrom() != location.getWorld() && seenBy.contains(e.getPlayer())) {
             sendSpawnPackets(e.getPlayer());
             queRemovePacket(e.getPlayer());
@@ -508,6 +545,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
+
+        if(removed) return;
 
         if(visibleByDefault) seenBy.add(e.getPlayer());
 
@@ -521,11 +560,15 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
 
+        if(removed) return;
+
         seenBy.remove(e.getPlayer());
 
     }
 
     public void queRemovePacket(Player player) {
+
+        if(removed) return;
 
         new BukkitRunnable() {
 
@@ -536,6 +579,12 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
             }
 
         }.runTaskLater(main, 1);
+
+    }
+
+    public boolean isRemoved() {
+
+        return removed;
 
     }
 }
