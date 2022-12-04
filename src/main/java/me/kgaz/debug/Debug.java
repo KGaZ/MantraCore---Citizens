@@ -1,7 +1,12 @@
 package me.kgaz.debug;
 
 import me.kgaz.Citizens;
+import me.kgaz.npcs.CustomSecondLine;
+import me.kgaz.npcs.DisguiseType;
 import me.kgaz.npcs.NPC;
+import me.kgaz.npcs.VisibilityMask;
+import org.apache.commons.lang3.StringUtils;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,16 +28,40 @@ public class Debug implements CommandExecutor {
 
         Debugs = new HashMap<>();
 
+        registerAction("newNpc", new ActionRun() {
+
+            @Override
+            public void run(Player executor, String[] arguments) {
+
+                if(arguments.length == 0) return;
+                String name = ChatColor.translateAlternateColorCodes('&', StringUtils.join(arguments, " "));
+                NPC npc = main.getNpcRegistry().createNewNPC(name, executor.getLocation());
+                npc.saveOnDisable();
+                npc.spawn();
+                executor.sendMessage("Utworzono nowego NPC o ID "+npc.getCitizenId());
+
+            }
+
+        });
+
         registerAction("spawnNpc", new ActionRun() {
 
             @Override
             public void run(Player executor, String[] arguments) {
 
-                NPC npc = new NPC(main, executor.getLocation(), "§bRafal Aniszewski");
+                NPC npc = new NPC(0, main, executor.getLocation(), "§bRafal Aniszewski");
                 npc.setSkin(
                         "ewogICJ0aW1lc3RhbXAiIDogMTY2OTU5MDg1NDE5MywKICAicHJvZmlsZUlkIiA6ICI5MWQ4Mzk4ZjFkNjQ0ZGFjYWQwNDBjNDdlZjEwMTI2NyIsCiAgInByb2ZpbGVOYW1lIiA6ICJ4TjBNQU5EeCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS80NDJlOGMyNjRmZjlmMjg5YTk1MzAxNDEzZTZhMWMzYjNkOGQ0MDNjZmNlNjEwOThjZmM5OGYyZjE4ZDgzODIwIgogICAgfQogIH0KfQ==",
                         "QCiTeC8mmYgxtMDMLoxsQH12dmYeLzzCDP7uRpjOCgmoFOtMlaF1TObX6CbT3KfYTU8PFQY7WcUfxXO3W6hAU/kL/gMblpB3tGVGy/NXez+CEwKHPGMPpul6SMXeaoF/S1s/qEJhVdlu0n0rXv91buYNdvrdbgp5x5jdLkVry0UR999jTjusCCtIj35o3HcnZQkTEaxF2B2KVqoDrYbUK/GIFm25B1oY/RUxKjoVyvAdvSPc37F/LLeUhuylFk98NNzzY7QjhsGloNL8K9yz3BKuGyc1s3HzEi6wi8hESy/1OPmqNW9U99o0MVPR9r3j4Rp+N+K56xkKAD61xVGyJw6auxFCNSjcLqeh2pDUdcvBHISUFcUCUw5j07BZPxf9k9ML3CRcfnDCU+BlwxZ0Twbh93DsfdpvoP5urgkVFL0SW/ACeaGU0Z7Z+FfDpFaw8RQCnfQSXumsFiYqA0AL2d+0THYXT2uTNe0UriD81b0tSmu6VU6+/TzspgkfiO95Vdb1OgNF2hb0VX0ZxpMGCb2sL3bcZ8ZYXkgRUGcylm9NVlmDEGMCcv4QWYBoRdoj14rwL08n6wxwPQqYG1wBOvkewm7+T/+6mXi9v2p3lulOpwfUPB3m1MyYj8JroxutfRcP+YvLUdqpe/AZdeltfEsyrW3X9em885hSQt5Ag9I=");
-                npc.setSecondLine("§e* §f2 Nowe Zadania! §e*");
+                npc.setSecondLine("§e* §fWitaj, <player> §e*");
+
+                npc.setCustomLineModifier(new CustomSecondLine() {
+                    @Override
+                    public String onSendingSecondLine(Player player, String line) {
+                        return line.replace("<player>", player.getName());
+                    }
+                });
+                npc.setDisguise(DisguiseType.PIG);
                 npc.spawn();
 
                 new BukkitRunnable() {
@@ -48,9 +77,11 @@ public class Debug implements CommandExecutor {
                             return;
                         }
 
+                        npc.playArmAnimation();
+
                         if(i % 2 == 0) {
-                            npc.setSecondLine("§6* §e2 Nowe Zadania! §6*");
-                        } else npc.setSecondLine("§e* §f2 Nowe Zadania! §e*");
+                            npc.setSecondLine("§6* §eWitaj <player>! §6*");
+                        } else npc.setSecondLine("§e* §fWitaj <player>! §e*");
 
                     }
 
@@ -140,5 +171,7 @@ public class Debug implements CommandExecutor {
         } else sender.sendMessage("Nie masz do tego uprawnien!");
 
         return false;
+
     }
+
 }

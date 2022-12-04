@@ -1,6 +1,9 @@
 package me.kgaz;
 
 import me.kgaz.debug.Debug;
+import me.kgaz.npcs.NPC;
+import me.kgaz.npcs.NPCCommands;
+import me.kgaz.npcs.NPCRegistry;
 import me.kgaz.npcs.NPCTest;
 import me.kgaz.tasks.GlobalTaskManager;
 import me.kgaz.tasks.Tickable;
@@ -16,21 +19,25 @@ import java.util.List;
 
 public class Citizens extends JavaPlugin {
 
+    public static Citizens MAIN;
+
     private Listener[] listeners;
     private Loadable[] loadables;
     private List<Task> disableTasks;
     private GlobalTaskManager gtm;
     private UserManager manager;
+    private NPCRegistry registry;
 
     private void preEnable() {
 
         System.out.println("Initiating values...");
 
+        gtm = new GlobalTaskManager(this);
         manager = new UserManager(this);
         listeners = new Listener[] {new NPCTest()};
         loadables = new Loadable[] {};
         disableTasks = new ArrayList<>();
-        gtm = new GlobalTaskManager(this);
+        registry = new NPCRegistry(this);
 
         getCommand("action").setExecutor(new Debug(this));
 
@@ -44,6 +51,8 @@ public class Citizens extends JavaPlugin {
     @Override
     public void onEnable() {
 
+        MAIN = this;
+
         System.out.println("Enabling Plugin...");
 
         preEnable();
@@ -51,6 +60,8 @@ public class Citizens extends JavaPlugin {
         registerListeners();
 
         loadLoadables();
+
+        getCommand("npc").setExecutor(new NPCCommands(this));
 
         System.out.println("Enabled Plugin Successfully!");
 
@@ -61,13 +72,13 @@ public class Citizens extends JavaPlugin {
 
         System.out.println("Disabling Plugin...");
 
+        getUserManager().disable();
+
         disableLoadables();
 
         executeDisableTasks();
 
     }
-
-
 
     public void registerListener(Listener listener) {
 
@@ -85,9 +96,7 @@ public class Citizens extends JavaPlugin {
 
         System.out.println("Executing Tasks...");
 
-        /*
         disableTasks.stream().filter(Task::isActive).forEach(Task::run);
-        */
 
     }
 
@@ -193,6 +202,12 @@ public class Citizens extends JavaPlugin {
 
     public UserManager getUserManager() {
         return manager;
+    }
+
+    public NPCRegistry getNpcRegistry() {
+
+        return registry;
+
     }
 
 }

@@ -2,8 +2,10 @@ package me.kgaz.users;
 
 import me.kgaz.Citizens;
 import me.kgaz.npcs.NPC;
+import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
+import me.kgaz.util.Removeable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UserManager implements Listener {
+public class UserManager implements Listener, Tickable {
 
     private Map<String, User> users = new HashMap<>();
     private List<PacketInListener> packetInListenerList;
@@ -30,6 +32,7 @@ public class UserManager implements Listener {
         packetOutListenerList = new ArrayList<>();
 
         owner.registerListener(this);
+        owner.getGlobalTaskManager().registerTask(this, false);
 
     }
 
@@ -92,4 +95,29 @@ public class UserManager implements Listener {
         packetInListenerList.remove(npc);
 
     }
+
+    @Override
+    public void run() {
+
+        packetInListenerList.removeIf(packetInListener -> {
+            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
+        });
+
+        packetOutListenerList.removeIf(packetInListener -> {
+            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
+        });
+
+    }
+
+    @Override
+    public int getPeriod() {
+        return 20;
+    }
+
+    public void disable() {
+
+        users.keySet().forEach(key -> users.get(key).disable());
+
+    }
+
 }

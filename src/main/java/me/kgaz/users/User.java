@@ -4,8 +4,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.MessageToMessageDecoder;
+import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
+import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.Packet;
 import net.minecraft.server.v1_8_R3.PlayerConnection;
 import org.bukkit.Bukkit;
@@ -16,10 +18,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.ArrayList;
 import java.util.List;
 
-public class User {
+public class User implements Tickable {
 
     private boolean valid;
 
+    private boolean disabled;
     private UserManager manager;
     private Player owner;
     private String nickName;
@@ -34,6 +37,8 @@ public class User {
 
         if(!valid) throw new IllegalArgumentException("Tried to create User from offline Player!");
 
+        disabled = false;
+
         owner = player;
         this.manager = manager;
         nickName = player.getName();
@@ -46,6 +51,14 @@ public class User {
         connection.networkManager.channel.pipeline() .addAfter("decoder", "incoming_handler", new MessageToMessageDecoder<Packet>() {
 
             public void decode(ChannelHandlerContext context, Packet packet, List<Object> objects) {
+
+                if(disabled) {
+
+                    objects.add(packet);
+                    context.write(objects);
+                    return;
+
+                }
 
                 for(PacketInListener packetInlistener : manager.getPacketInListenerList()) {
 
@@ -95,6 +108,11 @@ public class User {
             @Override
             public void write(ChannelHandlerContext context, Object packet, ChannelPromise promise) throws Exception {
 
+                if(disabled) {
+                    super.write(context, packet, promise);
+                    return;
+                }
+
                 for(PacketOutListener packetOutListener : manager.getPacketOutListenerList()) {
 
                     try {
@@ -141,7 +159,7 @@ public class User {
 
     public void onQuit(PlayerQuitEvent e) {
 
-        Bukkit.broadcastMessage("XD");
+        this.cancel();
 
     }
 
@@ -154,6 +172,30 @@ public class User {
     public void registerPacketOutListener(PacketOutListener listener) {
 
         packetOutListenerList.add(listener);
+
+    }
+
+    @Override
+    public void run() {
+
+        packetInListenerList.removeIf(packetInListener -> {
+            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
+        });
+
+        packetOutListenerList.removeIf(packetInListener -> {
+            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
+        });
+
+    }
+
+    @Override
+    public int getPeriod() {
+        return 20;
+    }
+
+    public void disable() {
+
+        disabled = true;
 
     }
 
