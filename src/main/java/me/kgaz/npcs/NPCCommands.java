@@ -256,7 +256,7 @@ public class NPCCommands implements CommandExecutor, Listener {
                                         (sel.getSignature() != null ? "§a"+sel.getSignature() : "§cBrak")
                         ))));
 
-                        //player.spigot().sendMessage(comp);
+                        player.spigot().sendMessage(comp);
 
                         sender.sendMessage("§7Druga linijka§8: §f"+(sel.getSecondLine() != null ? sel.getSecondLine() : "§cBrak"));
                         sender.sendMessage("§7Disguise Type§8: §9"+sel.getDisguise().toString());

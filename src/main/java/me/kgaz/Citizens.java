@@ -1,5 +1,6 @@
 package me.kgaz;
 
+import me.kgaz.chat.ChatManager;
 import me.kgaz.debug.Debug;
 import me.kgaz.npcs.NPC;
 import me.kgaz.npcs.NPCCommands;
@@ -27,6 +28,7 @@ public class Citizens extends JavaPlugin {
     private GlobalTaskManager gtm;
     private UserManager manager;
     private NPCRegistry registry;
+    private ChatManager chat;
 
     private void preEnable() {
 
@@ -38,6 +40,7 @@ public class Citizens extends JavaPlugin {
         loadables = new Loadable[] {};
         disableTasks = new ArrayList<>();
         registry = new NPCRegistry(this);
+        chat = new ChatManager(this);
 
         getCommand("action").setExecutor(new Debug(this));
 

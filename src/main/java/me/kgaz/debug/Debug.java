@@ -5,12 +5,19 @@ import me.kgaz.npcs.CustomSecondLine;
 import me.kgaz.npcs.DisguiseType;
 import me.kgaz.npcs.NPC;
 import me.kgaz.npcs.VisibilityMask;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_8_R3.NBTTagCompound;
 import org.apache.commons.lang3.StringUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
@@ -27,6 +34,20 @@ public class Debug implements CommandExecutor {
         INSTANCE = this;
 
         Debugs = new HashMap<>();
+
+        registerAction("testItem", new ActionRun() {
+
+            @Override
+            public void run(Player executor, String[] arguments) {
+
+                ItemStack is = executor.getItemInHand();
+                TextComponent comp = new TextComponent(TextComponent.fromLegacyText("[ITEM]"));
+                comp.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new BaseComponent[]{new TextComponent(CraftItemStack.asNMSCopy(is).save(new NBTTagCompound()).toString())}));
+                Bukkit.getOnlinePlayers().forEach(player -> player.spigot().sendMessage(comp));
+
+            }
+
+        });
 
         registerAction("newNpc", new ActionRun() {
 
