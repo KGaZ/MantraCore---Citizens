@@ -9,6 +9,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,7 +35,8 @@ public class NPCCommands implements CommandExecutor, Listener {
                 "§6/§enpc create §8- §7Tworzysz NPC i wybierasz go.",
                 "§6/§enpc tp §8- §7Teleport do NPC",
                 "§6/§enpc move §8- §7Teleport NPC do Ciebie",
-                "§6/§enpc setLine [line] §8- §7Ustawia druga linijke NPC."
+                "§6/§enpc setLine [line] §8- §7Ustawia druga linijke NPC.",
+                "§6/§enpc skin <nick> §8- §7Ustawia skin twojemu NPC."
         };
 
     }
@@ -103,7 +105,7 @@ public class NPCCommands implements CommandExecutor, Listener {
                         if(args.length > 1) {
 
                             StringBuilder line = new StringBuilder(args[1]);
-                            for(int i = 2; i < args.length; i++) line.append(" ").append(args[1]);
+                            for(int i = 2; i < args.length; i++) line.append(" ").append(args[i]);
 
                             sel.setSecondLine(ChatColor.translateAlternateColorCodes('&', line.toString()));
                             sender.sendMessage("§7Ustawiono druga linijke dla NPC!");
@@ -117,6 +119,44 @@ public class NPCCommands implements CommandExecutor, Listener {
                         if(args.length > 1) {
 
                             String nick = args[1];
+                            NPC sel = selected.get(player);
+                            if(sel == null) {
+
+                                sender.sendMessage("§7Aby uzyc te komende nalezy wybrac NPC za pomoca patyka lub /npc sel!");
+                                return false;
+
+                            }
+
+                            SkinFetcher fetch = new SkinFetcher(main, nick, new SkinFetcher.FetchResult() {
+
+                                @Override
+                                public void skinFetched(String texture, String signature) {
+
+                                    if(sel.isSpawned()) {
+                                        sel.despawn();
+                                    }
+
+                                    sel.setSkin(texture, signature);
+
+                                    TextComponent component = new TextComponent(TextComponent.fromLegacyText("§9§l[SKIN]"));
+                                    component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("§7Texture: \n§a" +texture+"\n§7Signature:\n§a"+signature)));
+                                    ((Player) sender).spigot().sendMessage(component);
+
+                                    new BukkitRunnable() {
+
+                                        public void run() {
+
+                                            sel.spawn();
+
+                                        }
+
+                                    }.runTaskLater(main, 10);
+
+                                }
+
+                            });
+
+                            sender.sendMessage("§7Ustawiono skin! (Moze zajac pare sekund)");
 
                         } else sender.sendMessage("§7Poprawne uzycie§8: §6/§enpc skin <nick>");
 

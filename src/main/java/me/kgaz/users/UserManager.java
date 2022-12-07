@@ -6,6 +6,7 @@ import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.Removeable;
+import net.minecraft.server.v1_8_R3.PacketPlayOutPlayerInfo;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -112,6 +113,11 @@ public class UserManager implements Listener, Tickable {
     @Override
     public int getPeriod() {
         return 20;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return false;
     }
 
     public void disable() {

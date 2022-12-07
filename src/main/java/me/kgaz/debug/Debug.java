@@ -1,10 +1,7 @@
 package me.kgaz.debug;
 
 import me.kgaz.Citizens;
-import me.kgaz.npcs.CustomSecondLine;
-import me.kgaz.npcs.DisguiseType;
-import me.kgaz.npcs.NPC;
-import me.kgaz.npcs.VisibilityMask;
+import me.kgaz.npcs.*;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;

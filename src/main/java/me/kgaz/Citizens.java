@@ -36,11 +36,12 @@ public class Citizens extends JavaPlugin {
 
         gtm = new GlobalTaskManager(this);
         manager = new UserManager(this);
-        listeners = new Listener[] {new NPCTest()};
+        listeners = new Listener[] {};
         loadables = new Loadable[] {};
         disableTasks = new ArrayList<>();
         registry = new NPCRegistry(this);
-        chat = new ChatManager(this);
+
+        /* chat = new ChatManager(this); * Moved to MantraCore */
 
         getCommand("action").setExecutor(new Debug(this));
 

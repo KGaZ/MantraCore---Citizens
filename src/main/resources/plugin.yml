@@ -6,5 +6,3 @@ load: POSTWORLD
 commands:
   action:
   npc:
-  showItemFromChat:
-  showHeartzFromChat:

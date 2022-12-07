@@ -301,6 +301,11 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     }
 
     @Override
+    public boolean isCancelled() {
+        return removed;
+    }
+
+    @Override
     public boolean handlePacket(ChannelHandlerContext context, PlayerConnection connection, Packet packet, Player target) {
 
         Bukkit.getScheduler().runTask(main, new Runnable() {
@@ -548,9 +553,21 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     }
 
+    private List<Player> cooldown = new ArrayList<>();
+
     private void sendSpawnPackets(Player player) {
 
         if(removed) return;
+
+        if(cooldown.contains(player)) return;
+
+        cooldown.add(player);
+
+        new BukkitRunnable() {
+            public void run() {
+                cooldown.remove(player);
+            }
+        }.runTaskLater(main, 20);
 
         PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
 
@@ -577,12 +594,14 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                     connection.sendPacket(packetInfo);
                     connection.sendPacket(packet);
                     connection.sendPacket(metadata);
+                    connection.sendPacket(new PacketPlayOutRespawn(entity.getId(), EnumDifficulty.HARD, WorldType.CUSTOMIZED, WorldSettings.EnumGamemode.CREATIVE));
 
                 } else {
 
                     connection.sendPacket(packetInfo);
                     connection.sendPacket(packet);
                     connection.sendPacket(metadata);
+                    connection.sendPacket(new PacketPlayOutRespawn(entity.getId(), EnumDifficulty.HARD, WorldType.CUSTOMIZED, WorldSettings.EnumGamemode.CREATIVE));
 
                 }
 
@@ -591,6 +610,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                 connection.sendPacket(packetInfo);
                 connection.sendPacket(packet);
                 connection.sendPacket(metadata);
+                connection.sendPacket(new PacketPlayOutRespawn(entity.getId(), EnumDifficulty.HARD, WorldType.CUSTOMIZED, WorldSettings.EnumGamemode.CREATIVE));
 
             }
 
@@ -759,8 +779,10 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
             seenBy.add(e.getPlayer());
 
             if(e.getPlayer().getWorld() == location.getWorld()) {
-                this.sendSpawnPackets(e.getPlayer());
-                queRemovePacket(e.getPlayer());
+
+                 sendSpawnPackets(e.getPlayer());
+                 queRemovePacket(e.getPlayer());
+
             }
 
         }

@@ -2,6 +2,7 @@ package me.kgaz.users;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import me.kgaz.tasks.Tickable;
@@ -27,8 +28,14 @@ public class User implements Tickable {
     private Player owner;
     private String nickName;
 
+    private boolean cancelled;
+
     private List<PacketInListener> packetInListenerList;
     private List<PacketOutListener> packetOutListenerList;
+
+    private ChannelPipeline pipeline;
+    private MessageToMessageDecoder<Packet> in;
+    private ChannelOutboundHandlerAdapter out;
 
 
     public User(Player player, UserManager manager) {
@@ -48,7 +55,9 @@ public class User implements Tickable {
 
         PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
 
-        connection.networkManager.channel.pipeline() .addAfter("decoder", "incoming_handler", new MessageToMessageDecoder<Packet>() {
+        pipeline = connection.networkManager.channel.pipeline();
+
+        in = new MessageToMessageDecoder<Packet>() {
 
             public void decode(ChannelHandlerContext context, Packet packet, List<Object> objects) {
 
@@ -101,14 +110,17 @@ public class User implements Tickable {
 
             }
 
-        });
+        };
 
-        connection.networkManager.channel.pipeline().addBefore("packet_handler", "custom_handler", new ChannelOutboundHandlerAdapter() {
+        pipeline.addAfter("decoder", "incoming_handler", in);
+
+        out = new ChannelOutboundHandlerAdapter() {
 
             @Override
             public void write(ChannelHandlerContext context, Object packet, ChannelPromise promise) throws Exception {
 
                 if(disabled) {
+
                     super.write(context, packet, promise);
                     return;
                 }
@@ -153,13 +165,15 @@ public class User implements Tickable {
 
             }
 
-        });
+        };
+
+        pipeline.addBefore("packet_handler", "custom_handler", out);
 
     }
 
     public void onQuit(PlayerQuitEvent e) {
 
-        this.cancel();
+       cancelled = true;
 
     }
 
@@ -199,4 +213,8 @@ public class User implements Tickable {
 
     }
 
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
 }
