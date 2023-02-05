@@ -39,7 +39,7 @@ import java.util.*;
 
 public class NPC implements Listener, Tickable, PacketInListener, PacketOutListener, Removeable {
 
-    private static int TEAM_ID = 0;
+    public static int TEAM_ID = 0;
     private final int id;
 
     private boolean removed;
@@ -130,6 +130,13 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         main.registerListener(this);
 
         shouldSave = false;
+
+    }
+
+    public void setName(String name) {
+
+        this.name = name;
+        longName = name.length() > 16;
 
     }
 
@@ -465,7 +472,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
             entity = disguise.createEntity(world);
 
-            entity.setCustomName(names[0]+names[1]);
+            entity.setCustomName(name);
             entity.setCustomNameVisible(true);
 
         }
@@ -556,6 +563,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     private List<Player> cooldown = new ArrayList<>();
 
     private void sendSpawnPackets(Player player) {
+
+        if(player.getWorld() != location.getWorld()) return;
 
         if(removed) return;
 
@@ -943,21 +952,33 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void setLocation(Location location) {
 
+        boolean moveWorlds = this.location.getWorld() != location.getWorld();
+
         this.location = location;
 
         if(spawned) {
 
-            entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getPitch(), location.getYaw());
-            entity.setPosition(location.getX(), location.getY(), location.getZ());
+            if(moveWorlds) {
 
-            seenBy.forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(new PacketPlayOutEntityTeleport(entity)));
+                despawn();
+                initEntity();
+                spawn();
 
-            if(secondLine != null) {
+            } else {
 
-                secondLineEntity.setLocation(location.getX(), location.getY() + disguise.getYModifier(), location.getZ(), location.getPitch(), location.getYaw());
-                secondLineEntity.setPosition(location.getX(), location.getY() + disguise.getYModifier(), location.getZ());
+                entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getPitch(), location.getYaw());
+                entity.setPosition(location.getX(), location.getY(), location.getZ());
 
-                seenBy.forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(new PacketPlayOutEntityTeleport(secondLineEntity)));
+                seenBy.forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(new PacketPlayOutEntityTeleport(entity)));
+
+                if(secondLine != null) {
+
+                    secondLineEntity.setLocation(location.getX(), location.getY() + disguise.getYModifier(), location.getZ(), location.getPitch(), location.getYaw());
+                    secondLineEntity.setPosition(location.getX(), location.getY() + disguise.getYModifier(), location.getZ());
+
+                    seenBy.forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(new PacketPlayOutEntityTeleport(secondLineEntity)));
+
+                }
 
             }
 

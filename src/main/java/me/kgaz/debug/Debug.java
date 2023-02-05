@@ -1,7 +1,9 @@
 package me.kgaz.debug;
 
 import me.kgaz.Citizens;
+import me.kgaz.diguises.DisguiseCreator;
 import me.kgaz.npcs.*;
+import me.kgaz.util.ParticleEffect;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -13,7 +15,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -31,6 +36,43 @@ public class Debug implements CommandExecutor {
         INSTANCE = this;
 
         Debugs = new HashMap<>();
+
+        registerAction("armorstand", new ActionRun() {
+            @Override
+            public void run(Player executor, String[] arguments) {
+
+                ArmorStand stand = (ArmorStand) executor.getWorld().spawnEntity(executor.getLocation(), EntityType.ARMOR_STAND);
+                stand.setGravity(false);
+                stand.setVisible(false);
+                stand.setCustomName("Siema");
+                stand.setCustomNameVisible(true);
+
+            }
+        });
+
+        registerAction("disguise", new ActionRun() {
+
+            @Override
+            public void run(Player executor, String[] arguments) {
+
+                Zombie zombie = (Zombie) executor.getWorld().spawnEntity(executor.getLocation(), EntityType.ZOMBIE);
+
+                zombie.setCustomName("Aniol Smierci Poziom 2");
+                zombie.setCustomNameVisible(true);
+
+                new BukkitRunnable() {
+
+                    public void run() {
+
+                        main.getDisguiseManager().disguiseEntity(zombie.getEntityId(), new DisguiseCreator(zombie, EntityType.SPIDER).generate());
+
+                    }
+
+                }.runTaskLater(main, 60);
+
+            }
+
+        });
 
         registerAction("testItem", new ActionRun() {
 

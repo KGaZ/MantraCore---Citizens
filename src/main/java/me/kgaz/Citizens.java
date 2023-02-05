@@ -2,6 +2,7 @@ package me.kgaz;
 
 import me.kgaz.chat.ChatManager;
 import me.kgaz.debug.Debug;
+import me.kgaz.diguises.DisguiseManager;
 import me.kgaz.npcs.NPC;
 import me.kgaz.npcs.NPCCommands;
 import me.kgaz.npcs.NPCRegistry;
@@ -29,6 +30,7 @@ public class Citizens extends JavaPlugin {
     private UserManager manager;
     private NPCRegistry registry;
     private ChatManager chat;
+    private DisguiseManager disguiseManager;
 
     private void preEnable() {
 
@@ -66,6 +68,8 @@ public class Citizens extends JavaPlugin {
         loadLoadables();
 
         getCommand("npc").setExecutor(new NPCCommands(this));
+
+        disguiseManager = new DisguiseManager(this);
 
         System.out.println("Enabled Plugin Successfully!");
 
@@ -211,6 +215,12 @@ public class Citizens extends JavaPlugin {
     public NPCRegistry getNpcRegistry() {
 
         return registry;
+
+    }
+
+    public DisguiseManager getDisguiseManager() {
+
+        return disguiseManager;
 
     }
 

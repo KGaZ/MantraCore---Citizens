@@ -309,8 +309,8 @@ public class ChatManager implements Listener, CommandExecutor {
 
     }
 
-    private List<CommandSender> block = new ArrayList<>();
-    private Map<Integer, ItemStack> items = new HashMap<>();
+    private final List<CommandSender> block = new ArrayList<>();
+    private final Map<Integer, ItemStack> items = new HashMap<>();
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 

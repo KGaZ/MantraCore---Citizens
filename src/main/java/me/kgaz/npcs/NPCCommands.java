@@ -36,7 +36,9 @@ public class NPCCommands implements CommandExecutor, Listener {
                 "§6/§enpc tp §8- §7Teleport do NPC",
                 "§6/§enpc move §8- §7Teleport NPC do Ciebie",
                 "§6/§enpc setLine [line] §8- §7Ustawia druga linijke NPC.",
-                "§6/§enpc skin <nick> §8- §7Ustawia skin twojemu NPC."
+                "§6/§enpc skin <nick> §8- §7Ustawia skin twojemu NPC.",
+                "§6/§enpc type <type> §8- §7Ustawia entity type twojego NPC.",
+                "§6/§enpc rename <name> §8- §7Zmieniasz nazwe NPC."
         };
 
     }
@@ -111,6 +113,71 @@ public class NPCCommands implements CommandExecutor, Listener {
                             sender.sendMessage("§7Ustawiono druga linijke dla NPC!");
 
                         } else sender.sendMessage("§7Poprawne uzycie§8: §6/§enpc setLine [linijka]");
+
+                    }
+
+                    if(args[0].equalsIgnoreCase("rename")) {
+
+                        if(args.length > 1) {
+
+                            NPC sel = selected.get(player);
+                            if(sel == null) {
+
+                                sender.sendMessage("§7Aby uzyc te komende nalezy wybrac NPC za pomoca patyka lub /npc sel!");
+                                return false;
+
+                            }
+
+                            StringBuilder name = new StringBuilder(args[1]);
+                            for(int i = 2; i < args.length; i++) name.append(" ").append(args[i]);
+
+                            if(sel.isSpawned()) sel.despawn();
+
+                            sel.setName(ChatColor.translateAlternateColorCodes('&', name.toString()));
+
+                            sel.spawn();
+
+                            sender.sendMessage("§7Tadam!");
+
+                        } else sender.sendMessage("§7Poprawne uzycie§8: §6/§enpc rename <name>");
+
+                    }
+
+                    if(args[0].equalsIgnoreCase("type")) {
+
+                        if(args.length > 1) {
+
+                            NPC sel = selected.get(player);
+                            if(sel == null) {
+
+                                sender.sendMessage("§7Aby uzyc te komende nalezy wybrac NPC za pomoca patyka lub /npc sel!");
+                                return false;
+
+                            }
+
+                            DisguiseType type = DisguiseType.PLAYER;
+
+                            try {
+
+                                type = DisguiseType.valueOf(args[1].toUpperCase());
+
+                            } catch (Exception exc) {
+
+                                sender.sendMessage("§7Nie chcialo mi sie robic albo nie istnieje taki entity type");
+                                return false;
+
+                            }
+
+                            if(sel.isSpawned()) sel.despawn();
+
+                            sel.setDisguise(type);
+
+                            sel.spawn();
+
+                            sender.sendMessage("§7Tadam!");
+
+
+                        } else sender.sendMessage("§7Poprawne uzycie§8: §6/§enpc type <entityType>");
 
                     }
 
