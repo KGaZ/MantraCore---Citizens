@@ -1,7 +1,7 @@
 package me.kgaz.debug;
 
 import me.kgaz.Citizens;
-import me.kgaz.diguises.DisguiseCreator;
+import me.kgaz.holograms.Hologram;
 import me.kgaz.npcs.*;
 import me.kgaz.util.ParticleEffect;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -41,37 +41,11 @@ public class Debug implements CommandExecutor {
             @Override
             public void run(Player executor, String[] arguments) {
 
-                ArmorStand stand = (ArmorStand) executor.getWorld().spawnEntity(executor.getLocation(), EntityType.ARMOR_STAND);
-                stand.setGravity(false);
-                stand.setVisible(false);
-                stand.setCustomName("Siema");
-                stand.setCustomNameVisible(true);
+                Hologram test = new Hologram(main, executor.getLocation(), arguments);
+                test.spawn();
+                executor.sendMessage("Siema");
 
             }
-        });
-
-        registerAction("disguise", new ActionRun() {
-
-            @Override
-            public void run(Player executor, String[] arguments) {
-
-                Zombie zombie = (Zombie) executor.getWorld().spawnEntity(executor.getLocation(), EntityType.ZOMBIE);
-
-                zombie.setCustomName("Aniol Smierci Poziom 2");
-                zombie.setCustomNameVisible(true);
-
-                new BukkitRunnable() {
-
-                    public void run() {
-
-                        main.getDisguiseManager().disguiseEntity(zombie.getEntityId(), new DisguiseCreator(zombie, EntityType.SPIDER).generate());
-
-                    }
-
-                }.runTaskLater(main, 60);
-
-            }
-
         });
 
         registerAction("testItem", new ActionRun() {
@@ -214,7 +188,7 @@ public class Debug implements CommandExecutor {
                         i++;
                         if(i==-1) continue;
 
-                        arguments[i] = args[i+1];
+                        arguments[i] = ChatColor.translateAlternateColorCodes('&', args[i+1]);
 
                     }
 

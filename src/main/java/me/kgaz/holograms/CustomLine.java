@@ -1,4 +1,4 @@
-package me.kgaz.holo;
+package me.kgaz.holograms;
 
 import org.bukkit.entity.Player;
 
