@@ -1,27 +1,28 @@
 package me.kgaz;
 
-import me.kgaz.chat.ChatManager;
+import me.kgaz.betterDisguises.DisguisePacketManager;
 import me.kgaz.debug.Debug;
-import me.kgaz.diguises.DisguiseManager;
-import me.kgaz.npcs.NPC;
+import me.kgaz.events.AdminCommand;
+import me.kgaz.events.SpinLocations;
+import me.kgaz.kasyno.poker.CardInitiator;
 import me.kgaz.npcs.NPCCommands;
 import me.kgaz.npcs.NPCRegistry;
-import me.kgaz.npcs.NPCTest;
+import me.kgaz.tab.Tabbed;
 import me.kgaz.tasks.GlobalTaskManager;
-import me.kgaz.tasks.Tickable;
 import me.kgaz.users.UserManager;
 import me.kgaz.util.Loadable;
 import me.kgaz.util.Task;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Citizens extends JavaPlugin {
+public class MantraLibs extends JavaPlugin {
 
-    public static Citizens MAIN;
+    public static MantraLibs MAIN;
 
     private Listener[] listeners;
     private Loadable[] loadables;
@@ -29,8 +30,16 @@ public class Citizens extends JavaPlugin {
     private GlobalTaskManager gtm;
     private UserManager manager;
     private NPCRegistry registry;
-    private ChatManager chat;
-    private DisguiseManager disguiseManager;
+    private DisguisePacketManager disguises;
+    private List<ArmorStand> toRemove;
+    private Tabbed tab;
+    private CardInitiator cardInitiator;
+
+    public static MantraLibs getInstance() {
+
+        return MAIN;
+
+    }
 
     private void preEnable() {
 
@@ -42,6 +51,21 @@ public class Citizens extends JavaPlugin {
         loadables = new Loadable[] {};
         disableTasks = new ArrayList<>();
         registry = new NPCRegistry(this);
+        toRemove = new ArrayList<>();
+        new AdminCommand(this);
+        new SpinLocations(this);
+        cardInitiator = new CardInitiator(this);
+
+        disableTasks.add(new Task() {
+
+            @Override
+            public void run() {
+
+                toRemove.forEach(ArmorStand::remove);
+
+            }
+
+        });
 
         /* chat = new ChatManager(this); * Moved to MantraCore */
 
@@ -59,6 +83,8 @@ public class Citizens extends JavaPlugin {
 
         MAIN = this;
 
+        tab = new Tabbed(this);
+
         System.out.println("Enabling Plugin...");
 
         preEnable();
@@ -68,8 +94,6 @@ public class Citizens extends JavaPlugin {
         loadLoadables();
 
         getCommand("npc").setExecutor(new NPCCommands(this));
-
-        disguiseManager = new DisguiseManager(this);
 
         System.out.println("Enabled Plugin Successfully!");
 
@@ -85,6 +109,8 @@ public class Citizens extends JavaPlugin {
         disableLoadables();
 
         executeDisableTasks();
+
+        this.registry.onDisable();
 
     }
 
@@ -105,6 +131,12 @@ public class Citizens extends JavaPlugin {
         System.out.println("Executing Tasks...");
 
         disableTasks.stream().filter(Task::isActive).forEach(Task::run);
+
+    }
+
+    public void addStand(ArmorStand stand) {
+
+        this.toRemove.add(stand);
 
     }
 
@@ -218,10 +250,16 @@ public class Citizens extends JavaPlugin {
 
     }
 
-    public DisguiseManager getDisguiseManager() {
+    public DisguisePacketManager getNewDisguises(){
+        return disguises;
+    }
 
-        return disguiseManager;
+    public Tabbed getTab(){
+        return tab;
+    }
 
+    public CardInitiator getCardInitiator(){
+        return cardInitiator;
     }
 
 }

@@ -9,7 +9,7 @@ public class NPCTest implements Listener {
     @EventHandler
     public void onClick(NPCInteractEvent e) {
 
-        Bukkit.broadcastMessage(e.getNpc().getEntityId() +" zostal klikniety przez "+e.getPlayer().getName()+"! PPM: "+e.isRightClick());
+
 
     }
 

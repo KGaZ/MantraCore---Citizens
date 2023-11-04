@@ -1,6 +1,6 @@
 package me.kgaz.tasks;
 
-import me.kgaz.Citizens;
+import me.kgaz.MantraLibs;
 import org.bukkit.Bukkit;
 
 import java.util.HashSet;
@@ -8,10 +8,10 @@ import java.util.Set;
 
 public class GlobalTaskManager implements Runnable {
 
-    private Citizens main;
+    private MantraLibs main;
     private Set<TickTask> asyncTickTasks, syncTickTasks;
 
-    public GlobalTaskManager(Citizens main) {
+    public GlobalTaskManager(MantraLibs main) {
 
         asyncTickTasks = new HashSet<>();
         syncTickTasks = new HashSet<>();

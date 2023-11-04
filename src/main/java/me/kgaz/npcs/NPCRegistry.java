@@ -1,6 +1,6 @@
 package me.kgaz.npcs;
 
-import me.kgaz.Citizens;
+import me.kgaz.MantraLibs;
 import me.kgaz.util.Task;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,10 +14,10 @@ import java.util.Map;
 public class NPCRegistry implements Task {
 
     private Map<Integer, NPC> registry;
-    private Citizens main;
+    private MantraLibs main;
     private int lastId;
 
-    public NPCRegistry(Citizens main) {
+    public NPCRegistry(MantraLibs main) {
 
         this.main = main;
 
@@ -114,4 +114,11 @@ public class NPCRegistry implements Task {
         return registry.get(id);
 
     }
+
+    public void onDisable() {
+
+        getNpcs().forEach(NPC::deleteArmorStand);
+
+    }
+
 }

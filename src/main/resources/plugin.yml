@@ -1,8 +1,10 @@
-main: me.kgaz.Citizens
-version: 1.0 Alfa
+main: me.kgaz.MantraLibs
+version: Nomanda wkurwiala tamta nazwa
 name: MantraLibs
 author: KGaZ
+depend: [Multiverse-Core]
 load: POSTWORLD
 commands:
   action:
   npc:
+  admin:

@@ -2,17 +2,15 @@ package me.kgaz.npcs;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import me.kgaz.Citizens;
-import net.minecraft.server.v1_8_R3.HttpUtilities;
+import me.kgaz.MantraLibs;
 import org.bukkit.Bukkit;
 
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 
 public class SkinFetcher {
 
-    public SkinFetcher(Citizens main, String nick, FetchResult result) {
+    public SkinFetcher(MantraLibs main, String nick, FetchResult result) {
 
         Thread fetchThread = new Thread() {
 
