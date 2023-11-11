@@ -14,6 +14,8 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_8_R3.EntityZombie;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.PacketPlayOutAnimation;
+import net.minecraft.server.v1_8_R3.PacketPlayOutEntityStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -25,6 +27,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -78,6 +81,30 @@ public class Debug implements CommandExecutor {
 
         });
 
+        registerAction("fixArm", new ActionRun() {
+
+            @Override
+            public void run(Player executor, String[] arguments) throws IOException {
+
+                if(arguments[0].equalsIgnoreCase("1")) {
+
+                    PacketPlayOutAnimation packet = new PacketPlayOutAnimation(((CraftPlayer)executor).getHandle(), (byte) 3);
+                    Bukkit.getOnlinePlayers().forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet));
+                    executor.sendMessage("Fixed #1");
+
+                } else if(arguments[0].equalsIgnoreCase("2")) {
+
+
+                    PacketPlayOutEntityStatus packet = new PacketPlayOutEntityStatus(((CraftPlayer)executor).getHandle(), (byte) 9);
+                    Bukkit.getOnlinePlayers().forEach(player -> ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet));
+                    executor.sendMessage("Fixed #2");
+
+
+                }
+
+            }
+
+        });
 
         registerAction("initAnim", new ActionRun() {
 

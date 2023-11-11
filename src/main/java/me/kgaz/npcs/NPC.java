@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -128,6 +129,10 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         spawned = false;
         texture = null;
         signature = null;
+
+        editing = false;
+
+        this.items = new org.bukkit.inventory.ItemStack[5];
 
         removed = false;
 
@@ -424,15 +429,14 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
             if(id == this.entity.getId()) {
 
-                if(!seenBy.contains(target)) return false;
+                if(!seenBy.contains(target)) return true;
 
-                if(target.getWorld() != location.getWorld()) return false;
-                if(target.getLocation().distanceSquared(location) > 26) return false;
+                if(target.getWorld() != location.getWorld()) return true;
+                if(target.getLocation().distanceSquared(location) > 26) return true;
 
                 boolean rightClick = true;
 
                 if(action == PacketPlayInUseEntity.EnumEntityUseAction.ATTACK) rightClick = false;
-                else return false;
 
                 NPCInteractEvent event = new NPCInteractEvent(target, this, rightClick);
 
