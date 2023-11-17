@@ -437,6 +437,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                 boolean rightClick = true;
 
                 if(action == PacketPlayInUseEntity.EnumEntityUseAction.ATTACK) rightClick = false;
+                else if(action == PacketPlayInUseEntity.EnumEntityUseAction.INTERACT_AT) return true;
 
                 NPCInteractEvent event = new NPCInteractEvent(target, this, rightClick);
 
