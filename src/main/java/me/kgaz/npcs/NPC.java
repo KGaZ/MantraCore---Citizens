@@ -28,15 +28,11 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class NPC implements Listener, Tickable, PacketInListener, PacketOutListener, Removeable {
 
@@ -388,7 +384,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                     if(seenBy.contains(target)) {
 
                         sendSpawnPackets(target);
-                        queRemovePacket(target);
 
                     }
 
@@ -641,35 +636,37 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                 if(player.getWorld() == location.getWorld()) {
 
                     sendSpawnPackets(player);
-                    queRemovePacket(player);
 
                 }
 
             }
-
-            new BukkitRunnable() {
-
-                public void run() {
-
-                    seenBy.forEach(NPC.this::removeTab);
-
-                }
-
-            }.runTaskLater(main, 140);
-
         }
 
     }
 
-    private final List<Player> cooldown = new ArrayList<>();
+    private final Set<Player> cooldown = new HashSet<>();
 
     private void sendSpawnPackets(Player player) {
 
         if (removed) return;
 
-        sendDespawnData(player);
+        if(!sentData.contains(player)) {
 
-        sentData.remove(player);
+            new BukkitRunnable() {
+
+                public void run() {
+
+                    sentData.remove(player);
+
+                }
+
+            }.runTaskLater(main, 30);
+
+            sentData.add(player);
+
+        }
+
+        sendDespawnData(player);
 
         new BukkitRunnable() {
 
@@ -791,7 +788,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
                     }
 
-                }.runTaskLater(main, 3);
+                }.runTaskLaterAsynchronously(main, 3);
 
                 if (secondLine != null) {
 
@@ -807,7 +804,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
                         }
 
-                    }.runTaskLater(main, 3);
+                    }.runTaskLaterAsynchronously(main, 3);
 
                 }
 
@@ -870,14 +867,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     }
 
-    private void removeTab(Player player) {
-
-        if(disguise != DisguiseType.PLAYER) return;
-
-        //((CraftPlayer)player).getHandle().playerConnection.sendPacket(getRemoveInfoPacket());
-
-    }
-
     private void sendDespawnData(Player player) {
 
         ((CraftPlayer)player).getHandle().playerConnection.sendPacket(getDestroyPacket());
@@ -907,13 +896,10 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     @EventHandler
     public void onTeleport(PlayerTeleportEvent e) {
 
-        if(removed) return;
-
-        sentData.remove(e.getPlayer());
+        if(removed || sentData.contains(e.getPlayer())) return;
 
         if(e.getPlayer().getWorld() == location.getWorld() && seenBy.contains(e.getPlayer())) {
             sendSpawnPackets(e.getPlayer());
-            queRemovePacket(e.getPlayer());
         }
 
     }
@@ -923,11 +909,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
         if(removed) return;
 
-        sentData.remove(e.getPlayer());
-
         if(e.getPlayer().getWorld() == location.getWorld() && seenBy.contains(e.getPlayer())) {
             sendSpawnPackets(e.getPlayer());
-            queRemovePacket(e.getPlayer());
         }
 
     }
@@ -936,6 +919,8 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     public void onJoin(PlayerJoinEvent e) {
 
         if(removed) return;
+
+        sentData.add(e.getPlayer());
 
         if(visibleByDefault) {
 
@@ -949,6 +934,16 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
         }
 
+        new BukkitRunnable() {
+
+            public void run() {
+
+                sentData.remove(e.getPlayer());
+
+            }
+
+        }.runTaskLater(main, 30);
+
     }
 
     @EventHandler
@@ -957,22 +952,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         if(removed) return;
 
         seenBy.remove(e.getPlayer());
-
-    }
-
-    private void queRemovePacket(Player player) {
-
-        if(removed) return;
-
-        new BukkitRunnable() {
-
-            public void run() {
-
-                removeTab(player);
-
-            }
-
-        }.runTaskLater(main, 140);
 
     }
 
@@ -1015,7 +994,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
             seenBy.add(player);
 
             sendSpawnPackets(player);
-            queRemovePacket(player);
 
         }
 
@@ -1159,7 +1137,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     public void dspawn(Player player) {
 
         sendSpawnPackets(player);
-        queRemovePacket(player);
 
     }
 

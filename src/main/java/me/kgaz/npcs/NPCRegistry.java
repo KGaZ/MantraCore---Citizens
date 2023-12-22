@@ -111,6 +111,8 @@ public class NPCRegistry implements Task {
 
     public NPC getNpc(int id) {
 
+        if(registry.get(id) == null) return new DummyNPC(0, null, null, "");
+
         return registry.get(id);
 
     }

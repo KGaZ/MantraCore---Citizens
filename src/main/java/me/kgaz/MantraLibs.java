@@ -71,11 +71,6 @@ public class MantraLibs extends JavaPlugin {
 
         getCommand("action").setExecutor(new Debug(this));
 
-        /*
-        Test
-         */
-
-
     }
 
     @Override

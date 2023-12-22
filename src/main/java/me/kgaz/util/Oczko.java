@@ -245,10 +245,11 @@ public class Oczko implements Loadable, Listener {
     }
 
     public void surrenderPlayer2() {
+
         if(!inPlay) return;
         inPlay = false;
         accept2 = false;
-        if(player1.getVehicle() != null) player2.getVehicle().remove();
+        if(player2.getVehicle() != null) player2.getVehicle().remove();
         player2.teleport(MantraCore.getInstance().getLocationManager().getLocation("oczko-table"+id+"-leave2"));
         player2 = null;
 
@@ -472,7 +473,19 @@ public class Oczko implements Loadable, Listener {
 
             if(e.getSlot() > 10 && e.getSlot() < 16) {
 
+                if(e.getCurrentItem() == null) return;
+                if(e.getCurrentItem().getType() == Material.AIR) return;
+
                 NBTItem item = new NBTItem(e.getCurrentItem());
+
+                if(player1 == null) {
+                    surrenderPlayer1();
+                    return;
+                }
+                if(player2 == null) {
+                    surrenderPlayer2();
+                    return;
+                }
 
                 player1.playSound(pl.getLocation(), Sound.NOTE_BASS, 1, 1);
                 player2.playSound(pl.getLocation(), Sound.NOTE_BASS, 1, 1);

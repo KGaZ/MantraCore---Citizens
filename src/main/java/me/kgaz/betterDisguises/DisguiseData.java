@@ -112,8 +112,6 @@ public class DisguiseData {
 
                 watcher.watch(10, (byte) 127);
 
-                PacketPlayOutEntityMetadata skinPacket = new PacketPlayOutEntityMetadata(entity.getId(), watcher, true);
-
                 //packets.add(infoSpawnPacket);
                 //packets.add(spawn);
                 //packets.add(skinPacket);
