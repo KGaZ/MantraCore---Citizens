@@ -447,6 +447,9 @@ public class Oczko implements Loadable, Listener {
 
         if(gra != null) return;
 
+        if(e.getClickedInventory() == null) return;
+        if(e.getClickedInventory().getTitle() == null) return;
+
         if(e.getWhoClicked() == player1 || e.getWhoClicked() == player2 && e.getClickedInventory().getTitle().equals("Ustawienie Zakladu")) {
 
             e.setCancelled(true);
