@@ -48,9 +48,6 @@ public class UserManager implements Listener, Tickable {
     public void onJoin(PlayerJoinEvent e) {
 
         User newUser = new User(e.getPlayer(), this);
-
-        if(!newUser.isValid()) return;
-
         users.put(e.getPlayer().getName().toLowerCase(), newUser);
 
         Tablist tab = owner.getTab().newTableTabList(e.getPlayer());

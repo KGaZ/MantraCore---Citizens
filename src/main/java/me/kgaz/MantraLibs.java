@@ -129,6 +129,12 @@ public class MantraLibs extends JavaPlugin {
 
     }
 
+    public void addStand(ArmorStand stand) {
+
+        this.toRemove.add(stand);
+
+    }
+
     private void disableLoadables() {
 
         System.out.println("Disabling Classes...");

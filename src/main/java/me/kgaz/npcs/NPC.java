@@ -10,16 +10,16 @@ import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.ParticleEffect;
 import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.*;
-import org.bukkit.Material;
 import org.bukkit.*;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftArmorStand;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_8_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
@@ -104,8 +104,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
         shouldSave = true;
 
-        holder = (ArmorStand) new CustomArmorStand(location.clone()).getBukkitEntity();
-        ((CraftWorld)location.getWorld()).getHandle().addEntity(((CraftArmorStand)holder).getHandle());
+        holder = (ArmorStand) location.getWorld().spawnEntity(location.clone().add(0, 0, 0), EntityType.ARMOR_STAND);
         holder.setGravity(false);
         holder.setVisible(false);
 
@@ -145,8 +144,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
         shouldSave = false;
 
-        holder = (ArmorStand) new CustomArmorStand(location.clone()).getBukkitEntity();
-        ((CraftWorld)location.getWorld()).getHandle().addEntity(((CraftArmorStand)holder).getHandle());
+        holder = (ArmorStand) location.getWorld().spawnEntity(location.clone().add(0, 0, 0), EntityType.ARMOR_STAND);
         holder.setGravity(false);
         holder.setVisible(false);
 
@@ -259,6 +257,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
                     PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
 
                     ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+
 
                 }
 
@@ -1131,7 +1130,7 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     public void deleteArmorStand() {
 
-        if(holder != null) holder.remove();
+        holder.remove();
 
     }
 

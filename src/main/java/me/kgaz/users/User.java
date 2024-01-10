@@ -11,6 +11,7 @@ import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.Packet;
 import net.minecraft.server.v1_8_R3.PlayerConnection;
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -63,11 +64,8 @@ public class User implements Tickable {
                 if(disabled) {
 
                     objects.add(packet);
-                    try {
-                        context.write(objects);
-                    } catch(Exception exc) {
-                        return;
-                    }
+                    context.write(objects);
+                    return;
 
                 }
 
@@ -108,28 +106,13 @@ public class User implements Tickable {
                 }
 
                 objects.add(packet);
-
-                try {
-                    context.write(objects);
-                } catch(Exception exc) {
-                    return;
-                }
+                context.write(objects);
 
             }
 
         };
 
-        try {
-
-            pipeline.addAfter("decoder", "incoming_handler", in);
-
-        } catch(Exception exc) {
-
-            player.kickPlayer("Wystapil nieznany blad. Prosimy o relog oraz kontakt z administracja.");
-            valid=false;
-            return;
-
-        }
+        pipeline.addAfter("decoder", "incoming_handler", in);
 
         out = new ChannelOutboundHandlerAdapter() {
 
@@ -178,15 +161,7 @@ public class User implements Tickable {
 
                 }
 
-                try {
-
-                    super.write(context, packet, promise);
-
-                } catch(Exception exc) {
-
-                    return;
-
-                }
+                super.write(context, packet, promise);
 
             }
 
@@ -241,9 +216,5 @@ public class User implements Tickable {
     @Override
     public boolean isCancelled() {
         return cancelled;
-    }
-
-    public boolean isValid(){
-        return valid;
     }
 }
