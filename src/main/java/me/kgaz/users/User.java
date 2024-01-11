@@ -1,25 +1,27 @@
 package me.kgaz.users;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.handler.codec.MessageToMessageDecoder;
+import me.kgaz.npcs.NPC;
 import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.Packet;
+import net.minecraft.server.v1_8_R3.PacketPlayInUseEntity;
+import net.minecraft.server.v1_8_R3.PacketPlayOutSpawnEntity;
 import net.minecraft.server.v1_8_R3.PlayerConnection;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.*;
 
-public class User implements Tickable {
+public class User {
+
+    public static Map<UUID, Channel> channels = new HashMap<UUID, Channel>();
 
     private boolean valid;
 
@@ -29,14 +31,6 @@ public class User implements Tickable {
     private String nickName;
 
     private boolean cancelled;
-
-    private List<PacketInListener> packetInListenerList;
-    private List<PacketOutListener> packetOutListenerList;
-
-    private ChannelPipeline pipeline;
-    private MessageToMessageDecoder<Packet> in;
-    private ChannelOutboundHandlerAdapter out;
-
 
     public User(Player player, UserManager manager) {
 
@@ -50,112 +44,56 @@ public class User implements Tickable {
         this.manager = manager;
         nickName = player.getName();
 
-        packetInListenerList = new ArrayList<>();
-        packetOutListenerList = new ArrayList<>();
+        CraftPlayer craftPlayer = (CraftPlayer)player;
+        Channel channel = craftPlayer.getHandle().playerConnection.networkManager.channel;
+        channels.put(craftPlayer.getUniqueId(), channel);
 
-        PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
+        if(channel.pipeline().get("PacketInjector") != null) {
+            return;
+        }
 
-        pipeline = connection.networkManager.channel.pipeline();
+        channel.pipeline().addAfter("decoder", "PacketInjector", new MessageToMessageDecoder<PacketPlayInUseEntity>() {
 
-        in = new MessageToMessageDecoder<Packet>() {
-
-            public void decode(ChannelHandlerContext context, Packet packet, List<Object> objects) {
-
-                if(disabled) {
-
-                    objects.add(packet);
-                    context.write(objects);
-                    return;
-
-                }
-
-                for(PacketInListener packetInlistener : manager.getPacketInListenerList()) {
-
-                    try {
-
-                        if (packetInlistener.handlePacket(packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
-
-                for(PacketInListener packetInlistener : packetInListenerList) {
-
-                    try {
-
-                        if (packetInlistener.handlePacket(packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
+            public void decode(ChannelHandlerContext context, PacketPlayInUseEntity packet, List<Object> objects) {
 
                 objects.add(packet);
-                context.write(objects);
+
+                if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUseEntity")) {
+
+                    int id = (int) getValue(packet, "a");
+
+                    for(NPC npc : manager.getOwner().getNpcRegistry().getNpcs()) {
+
+                        if(npc.getEntityId() == id) {
+
+                            PacketPlayInUseEntity.EnumEntityUseAction action = (PacketPlayInUseEntity.EnumEntityUseAction) getValue(packet, "action");
+                            npc.rightClick(player, action);
+
+                        }
+
+                    }
+
+                }
 
             }
 
-        };
+        });
 
-        pipeline.addAfter("decoder", "incoming_handler", in);
+        channel.pipeline().addBefore("packet_handler", player.getName(), new ChannelOutboundHandlerAdapter() {
 
-        out = new ChannelOutboundHandlerAdapter() {
-
-            @Override
             public void write(ChannelHandlerContext context, Object packet, ChannelPromise promise) throws Exception {
 
-                if(disabled) {
+                if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayOutSpawnEntity")) {
 
-                    super.write(context, packet, promise);
-                    return;
-                }
+                    int id = (int) getValue(packet, "a");
 
-                for(PacketOutListener packetOutListener : manager.getPacketOutListenerList()) {
+                    for(NPC npc : manager.getOwner().getNpcRegistry().getNpcs()) {
 
-                    try {
+                        if(npc.getHandlerId() == id) {
 
-                        if (packetOutListener.handlePacket(context, connection, (Packet) packet, player)) {
-
-                            return;
+                            npc.handlerSent(player);
 
                         }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
-
-                for(PacketOutListener packetOutListener : packetOutListenerList) {
-
-                    try {
-
-                        if (packetOutListener.handlePacket(context, connection, (Packet) packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
 
                     }
 
@@ -165,9 +103,7 @@ public class User implements Tickable {
 
             }
 
-        };
-
-        pipeline.addBefore("packet_handler", "custom_handler", out);
+        });
 
     }
 
@@ -175,46 +111,53 @@ public class User implements Tickable {
 
        cancelled = true;
 
+        try{
+
+            Channel channel = ((CraftPlayer)e.getPlayer()).getHandle().playerConnection.networkManager.channel;
+
+            try {
+
+                channel.eventLoop().submit(() -> {
+
+                    channel.pipeline().remove(e.getPlayer().getName());
+                    channel.pipeline().remove("PacketInjector");
+                    return null;
+
+                });
+
+            }catch(Exception exc) {
+
+            }
+
+            channels.remove(e.getPlayer().getUniqueId());
+
+        }catch (Exception ex){
+
+            ex.printStackTrace();
+        }
+
+
     }
-
-    public void registerPacketInListener(PacketInListener listener) {
-
-        packetInListenerList.add(listener);
-
-    }
-
-    public void registerPacketOutListener(PacketOutListener listener) {
-
-        packetOutListenerList.add(listener);
-
-    }
-
-    @Override
-    public void run() {
-
-        packetInListenerList.removeIf(packetInListener -> {
-            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
-        });
-
-        packetOutListenerList.removeIf(packetInListener -> {
-            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
-        });
-
-    }
-
-    @Override
-    public int getPeriod() {
-        return 20;
-    }
-
     public void disable() {
 
         disabled = true;
 
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
+
+    private Object getValue(Object instance, String name) {
+        Object result = null;
+
+        try {
+            Field field = instance.getClass().getDeclaredField(name);
+            field.setAccessible(true);
+            result = field.get(instance);
+            field.setAccessible(false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
+
 }

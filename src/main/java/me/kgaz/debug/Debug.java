@@ -1,5 +1,7 @@
 package me.kgaz.debug;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import me.kgaz.MantraLibs;
 import me.kgaz.betterDisguises.DisguiseData;
 import me.kgaz.kasyno.*;
@@ -12,10 +14,7 @@ import me.kgaz.npcs.SkinFetcher;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.minecraft.server.v1_8_R3.EntityZombie;
-import net.minecraft.server.v1_8_R3.NBTTagCompound;
-import net.minecraft.server.v1_8_R3.PacketPlayOutAnimation;
-import net.minecraft.server.v1_8_R3.PacketPlayOutEntityStatus;
+import net.minecraft.server.v1_8_R3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -26,6 +25,7 @@ import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Debug implements CommandExecutor {
 
@@ -101,20 +102,6 @@ public class Debug implements CommandExecutor {
 
 
                 }
-
-            }
-
-        });
-
-        registerAction("initAnim", new ActionRun() {
-
-            @Override
-            public void run(Player executor, String[] arguments) throws IOException {
-
-
-                TEST_ANIM = new Animation(arguments[0]);
-                TEST_ANIM.tick();
-                runnable.runTaskTimer(main, 2, 2);
 
             }
 

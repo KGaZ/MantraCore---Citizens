@@ -24,17 +24,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class NPC implements Listener, Tickable, PacketInListener, PacketOutListener, Removeable {
+public class NPC implements Listener, Tickable, Removeable {
 
     public static int TEAM_ID = 0;
     private final int id;
@@ -98,8 +95,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         secondLine = yml.getString(path+".secondLine");
         modifier = null;
 
-        main.getUserManager().registerPacketInListener(this);
-        main.getUserManager().registerPacketOutListener(this);
         main.registerListener(this);
 
         shouldSave = true;
@@ -138,8 +133,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         modifier = null;
         disguise = DisguiseType.PLAYER;
 
-        main.getUserManager().registerPacketInListener(this);
-        main.getUserManager().registerPacketOutListener(this);
         main.registerListener(this);
 
         shouldSave = false;
@@ -355,39 +348,15 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
         return removed;
     }
 
-    @Override
-    public boolean handlePacket(ChannelHandlerContext context, PlayerConnection connection, Packet packet, Player target) {
+    public void handlerSent(Player target) {
 
-        if (packet instanceof PacketPlayOutSpawnEntity) {
+        if(spawned) {
 
-            PacketPlayOutSpawnEntity data = (PacketPlayOutSpawnEntity) packet;
+            if(id == NPC.this.holder.getEntityId()) {
 
-            int id;
+                if(seenBy.contains(target)) {
 
-            try {
-
-                Field a = PacketPlayOutSpawnEntity.class.getDeclaredField("a");
-                a.setAccessible(true);
-                id = a.getInt(data);
-
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-
-                e.printStackTrace();
-                return true;
-
-            }
-
-            if(spawned) {
-
-                if(id == NPC.this.holder.getEntityId()) {
-
-                    if(seenBy.contains(target)) {
-
-                        sendSpawnPackets(target);
-
-                    }
-
-                    return true;
+                    sendSpawnPackets(target);
 
                 }
 
@@ -395,109 +364,79 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
         }
 
-        return false;
     }
 
-    @Override
-    public boolean handlePacket(Packet packet, Player target) {
+    public void rightClick(Player target, PacketPlayInUseEntity.EnumEntityUseAction action) {
 
-        if(packet instanceof PacketPlayInUseEntity) {
+        if(!seenBy.contains(target)) return;
 
-            PacketPlayInUseEntity data = (PacketPlayInUseEntity) packet;
+        if(target.getWorld() != location.getWorld()) return;
+        if(target.getLocation().distanceSquared(location) > 26) return;
 
-            int id = -1;
-            PacketPlayInUseEntity.EnumEntityUseAction action = null;
+        boolean rightClick = true;
 
-            try {
+        if(action == PacketPlayInUseEntity.EnumEntityUseAction.ATTACK) rightClick = false;
+        else if(action == PacketPlayInUseEntity.EnumEntityUseAction.INTERACT_AT) return;
 
-                Field i = PacketPlayInUseEntity.class.getDeclaredField("a");
-                i.setAccessible(true);
-                id = i.getInt(data);
+        NPCInteractEvent event = new NPCInteractEvent(target, this, rightClick);
 
-                Field a = PacketPlayInUseEntity.class.getDeclaredField("action");
-                a.setAccessible(true);
-                action = (PacketPlayInUseEntity.EnumEntityUseAction) a.get(data);
+        if(editing && target.hasPermission("npc.admin.edit")) {
 
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            org.bukkit.inventory.ItemStack is = target.getInventory().getItemInHand();
 
-            if(id == this.entity.getId()) {
+            if(is == null || is.getType() == Material.AIR) {
 
-                if(!seenBy.contains(target)) return true;
+                new BukkitRunnable() {
 
-                if(target.getWorld() != location.getWorld()) return true;
-                if(target.getLocation().distanceSquared(location) > 26) return true;
+                    public void run() {
 
-                boolean rightClick = true;
+                        for(int i = 0; i < 5; i++) {
 
-                if(action == PacketPlayInUseEntity.EnumEntityUseAction.ATTACK) rightClick = false;
-                else if(action == PacketPlayInUseEntity.EnumEntityUseAction.INTERACT_AT) return true;
+                            if(items[i] != null) if(items[i].getType() != Material.AIR) {
 
-                NPCInteractEvent event = new NPCInteractEvent(target, this, rightClick);
+                                location.getWorld().dropItem(location, items[i]);
+                                target.playSound(location, Sound.CHICKEN_EGG_POP, 1, 1);
 
-                if(editing && target.hasPermission("npc.admin.edit")) {
-
-                    org.bukkit.inventory.ItemStack is = target.getInventory().getItemInHand();
-
-                    if(is == null || is.getType() == Material.AIR) {
-
-                        new BukkitRunnable() {
-
-                            public void run() {
-
-                                for(int i = 0; i < 5; i++) {
-
-                                    if(items[i] != null) if(items[i].getType() != Material.AIR) {
-
-                                        location.getWorld().dropItem(location, items[i]);
-                                        target.playSound(location, Sound.CHICKEN_EGG_POP, 1, 1);
-
-                                        PacketPlayOutEntityEquipment eq = new PacketPlayOutEntityEquipment(entity.getId(), i, null);
-                                        Bukkit.getOnlinePlayers().stream().filter(player -> player.getWorld() == location.getWorld()).forEach(player -> {((CraftPlayer)player).getHandle().playerConnection.sendPacket(eq);});
+                                PacketPlayOutEntityEquipment eq = new PacketPlayOutEntityEquipment(entity.getId(), i, null);
+                                Bukkit.getOnlinePlayers().stream().filter(player -> player.getWorld() == location.getWorld()).forEach(player -> {((CraftPlayer)player).getHandle().playerConnection.sendPacket(eq);});
 
 
-                                        items[i] = null;
-
-                                    }
-
-                                }
+                                items[i] = null;
 
                             }
 
-                        }.runTask(main);
-
-                    } else {
-
-                        org.bukkit.Material mat = is.getType();
-                        int itemType = 0;
-                        if(mat.toString().contains("HELMET") || mat.isBlock() || mat == Material.SKULL_ITEM) itemType = 4;
-                        if(mat.toString().contains("CHESTPLATE")) itemType = 3;
-                        if(mat.toString().contains("LEGGINGS")) itemType = 2;
-                        if(mat.toString().contains("BOOTS")) itemType = 1;
-
-                        items[itemType] = is;
-
-                        PacketPlayOutEntityEquipment eq = new PacketPlayOutEntityEquipment(entity.getId(), itemType, CraftItemStack.asNMSCopy(items[itemType]));
-                        Bukkit.getOnlinePlayers().stream().filter(player -> player.getWorld() == location.getWorld()).forEach(player -> {((CraftPlayer)player).getHandle().playerConnection.sendPacket(eq);});
+                        }
 
                     }
 
-                } else Bukkit.getScheduler().runTask(main, new Runnable() {
+                }.runTask(main);
 
-                    @Override
-                    public void run() {
+            } else {
 
-                        try {Bukkit.getPluginManager().callEvent(event);} catch(Exception exc) {}
+                org.bukkit.Material mat = is.getType();
+                int itemType = 0;
+                if(mat.toString().contains("HELMET") || mat.isBlock() || mat == Material.SKULL_ITEM) itemType = 4;
+                if(mat.toString().contains("CHESTPLATE")) itemType = 3;
+                if(mat.toString().contains("LEGGINGS")) itemType = 2;
+                if(mat.toString().contains("BOOTS")) itemType = 1;
 
-                    }
-                });
+                items[itemType] = is;
+
+                PacketPlayOutEntityEquipment eq = new PacketPlayOutEntityEquipment(entity.getId(), itemType, CraftItemStack.asNMSCopy(items[itemType]));
+                Bukkit.getOnlinePlayers().stream().filter(player -> player.getWorld() == location.getWorld()).forEach(player -> {((CraftPlayer)player).getHandle().playerConnection.sendPacket(eq);});
 
             }
 
-        }
+        } else Bukkit.getScheduler().runTask(main, new Runnable() {
 
-        return false;
+            @Override
+            public void run() {
+
+                try {Bukkit.getPluginManager().callEvent(event);} catch(Exception exc) {}
+
+            }
+        });
+
     }
 
     public void copySkin(Player player) {
@@ -649,22 +588,22 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     private void sendSpawnPackets(Player player) {
 
         if (removed) return;
-
-        if(!sentData.contains(player)) {
-
-            new BukkitRunnable() {
-
-                public void run() {
-
-                    sentData.remove(player);
-
-                }
-
-            }.runTaskLater(main, 30);
-
-            sentData.add(player);
-
-        }
+//
+//        if(!sentData.contains(player)) {
+//
+//            new BukkitRunnable() {
+//
+//                public void run() {
+//
+//                    sentData.remove(player);
+//
+//                }
+//
+//            }.runTaskLater(main, 30);
+//
+//            sentData.add(player);
+//
+//        }
 
         sendDespawnData(player);
 
@@ -905,6 +844,15 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     }
 
     @EventHandler
+    public void onWorldChange(PlayerRespawnEvent e) {
+
+        if(removed) return;
+
+        sendSpawnPackets(e.getPlayer());
+
+    }
+
+    @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent e) {
 
         if(removed) return;
@@ -918,10 +866,18 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
 
+//        sentData.add(e.getPlayer());
+//        new BukkitRunnable() {
+//
+//            public void run() {
+//
+//                sentData.remove(e.getPlayer());
+//
+//            }
+//
+//        }.runTaskLater(main, 25);
+
         if(removed) return;
-
-        sentData.add(e.getPlayer());
-
         if(visibleByDefault) {
 
             if(mask != null) {
@@ -933,16 +889,6 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
             seenBy.add(e.getPlayer());
 
         }
-
-        new BukkitRunnable() {
-
-            public void run() {
-
-                sentData.remove(e.getPlayer());
-
-            }
-
-        }.runTaskLater(main, 30);
 
     }
 
@@ -1140,4 +1086,9 @@ public class NPC implements Listener, Tickable, PacketInListener, PacketOutListe
 
     }
 
+    public int getHandlerId() {
+
+        return holder.getEntityId();
+
+    }
 }

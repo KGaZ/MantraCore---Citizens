@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -103,25 +104,21 @@ public class UserManager implements Listener, Tickable {
 
     public void registerPacketInListener(PacketInListener listener) {
 
-        packetInListenerList.add(listener);
 
     }
 
     public void registerPacketOutListener(PacketOutListener listener) {
 
-        packetOutListenerList.add(listener);
 
     }
 
     public void unregisterPacketOutListener(PacketOutListener npc) {
 
-        packetOutListenerList.remove(npc);
 
     }
 
     public void unregisterPacketInListener(PacketInListener npc) {
 
-        packetInListenerList.remove(npc);
 
     }
 
@@ -154,4 +151,9 @@ public class UserManager implements Listener, Tickable {
 
     }
 
+    public MantraLibs getOwner() {
+
+        return owner;
+
+    }
 }
