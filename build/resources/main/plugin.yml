@@ -1,10 +1,9 @@
 main: me.kgaz.MantraLibs
-version: Nomanda wkurwiala tamta nazwa
+version: Bywaj mantro
 name: MantraLibs
 author: KGaZ
 depend: [Multiverse-Core]
 load: POSTWORLD
 commands:
-  action:
   npc:
-  admin:
+  npcfix:

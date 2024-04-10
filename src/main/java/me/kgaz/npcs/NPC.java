@@ -15,16 +15,19 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_8_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -99,7 +102,10 @@ public class NPC implements Listener, Tickable, Removeable {
 
         shouldSave = true;
 
-        holder = (ArmorStand) location.getWorld().spawnEntity(location.clone().add(0, 0, 0), EntityType.ARMOR_STAND);
+        RemoveArmorStand astand = new RemoveArmorStand(location.clone());
+        ((CraftWorld) location.getWorld()).getHandle().addEntity(astand);
+        holder = (ArmorStand) astand.getBukkitEntity();
+
         holder.setGravity(false);
         holder.setVisible(false);
 
@@ -137,7 +143,9 @@ public class NPC implements Listener, Tickable, Removeable {
 
         shouldSave = false;
 
-        holder = (ArmorStand) location.getWorld().spawnEntity(location.clone().add(0, 0, 0), EntityType.ARMOR_STAND);
+        RemoveArmorStand astand = new RemoveArmorStand(location.clone());
+        ((CraftWorld) location.getWorld()).getHandle().addEntity(astand);
+        holder = (ArmorStand) astand.getBukkitEntity();
         holder.setGravity(false);
         holder.setVisible(false);
 
@@ -297,8 +305,6 @@ public class NPC implements Listener, Tickable, Removeable {
         removed = true;
 
     }
-
-    private final int i = 0;
 
     @Override
     public void run() {
@@ -596,7 +602,6 @@ public class NPC implements Listener, Tickable, Removeable {
 //                public void run() {
 //
 //                    sentData.remove(player);
-//
 //                }
 //
 //            }.runTaskLater(main, 30);
@@ -892,6 +897,23 @@ public class NPC implements Listener, Tickable, Removeable {
 
     }
 
+//    @EventHandler
+//    public void onChunkLoad(ChunkLoadEvent e) {
+//
+//        if(e.getChunk().getWorld() != location.getWorld()) return;
+//
+//        for(Entity entity : e.getChunk().getEntities()) {
+//
+//            if(entity == holder) {
+//
+//                seenBy.stream().filter(player -> player.getWorld() == location.getWorld()).forEach(this::sendSpawnPackets);
+//
+//            }
+//
+//        }
+//
+//    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
 
@@ -1089,6 +1111,16 @@ public class NPC implements Listener, Tickable, Removeable {
     public int getHandlerId() {
 
         return holder.getEntityId();
+
+    }
+
+    public void refresh(Player player) {
+
+        if(player.getWorld() == location.getWorld()) {
+
+            sendSpawnPackets(player);
+
+        }
 
     }
 }

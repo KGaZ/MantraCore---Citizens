@@ -1,10 +1,7 @@
 package me.kgaz.users;
 
 import me.kgaz.MantraLibs;
-import me.kgaz.kasyno.poker.table.PokerTable;
-import me.kgaz.tab.tablist.Tablist;
 import me.kgaz.tasks.Tickable;
-import me.kgaz.util.Oczko;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.Removeable;
@@ -15,7 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,29 +36,11 @@ public class UserManager implements Listener, Tickable {
 
     }
 
-    private Map<Player, Tablist> tablists = new HashMap<>();
-
-    private Oczko oczko1 = null, oczko2= null;
-    private PokerTable table1;
-
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent e) {
 
         User newUser = new User(e.getPlayer(), this);
         users.put(e.getPlayer().getName().toLowerCase(), newUser);
-
-        Tablist tab = owner.getTab().newTableTabList(e.getPlayer());
-        tablists.put(e.getPlayer(), tab);
-
-        if(oczko1 == null) {
-            oczko1 = new Oczko("1");
-            oczko1.onLoad(owner);
-        }
-
-        if(oczko2 == null) {
-            oczko2 = new Oczko("2");
-            oczko2.onLoad(owner);
-        }
 
     }
 
@@ -71,14 +49,6 @@ public class UserManager implements Listener, Tickable {
 
         users.get(e.getPlayer().getName().toLowerCase()).onQuit(e);
         users.remove(e.getPlayer().getName().toLowerCase());
-
-        tablists.remove(e.getPlayer());
-
-    }
-
-    public Tablist getTablist(Player player) {
-
-        return tablists.get(player);
 
     }
 

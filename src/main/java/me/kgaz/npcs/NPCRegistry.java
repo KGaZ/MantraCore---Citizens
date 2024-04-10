@@ -2,8 +2,12 @@ package me.kgaz.npcs;
 
 import me.kgaz.MantraLibs;
 import me.kgaz.util.Task;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
+import org.bukkit.entity.Entity;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +28,26 @@ public class NPCRegistry implements Task {
         registry = new HashMap<>();
 
         main.registerTaskOnDisable(this);
+
+        int count = 0;
+        System.out.println("Rozpoczeto usuwanie starych armorstandow...");
+
+        for(World world : Bukkit.getWorlds()) {
+
+            for(Entity entity : world.getEntities()) {
+
+                if(((CraftEntity)entity).getHandle() instanceof RemoveArmorStand) {
+
+                    entity.remove();
+                    count++;
+
+                }
+
+            }
+
+        }
+
+        System.out.println("Poprawnie usunieto "+count+" starych armorstandow!");
 
         loadFiles();
 
