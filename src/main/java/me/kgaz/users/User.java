@@ -1,24 +1,39 @@
 package me.kgaz.users;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import io.netty.channel.*;
 import io.netty.handler.codec.MessageToMessageDecoder;
+import me.kgaz.MantraLibs;
+import me.kgaz.npcs.NPC;
 import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.Removeable;
-import net.minecraft.server.v1_8_R3.Packet;
-import net.minecraft.server.v1_8_R3.PlayerConnection;
+import net.minecraft.server.v1_8_R3.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.scoreboard.CraftScoreboard;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.scheduler.BukkitRunnable;
+import pl.nomand.mantracore.mobs.CachedMob;
+import pl.nomand.mantracore.mobs.WorldCache;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.*;
 
-public class User implements Tickable {
+public class User {
+
+    public static Map<UUID, Channel> channels = new HashMap<UUID, Channel>();
+
+    private static int TEAM_ID = 534;
 
     private boolean valid;
 
@@ -28,14 +43,6 @@ public class User implements Tickable {
     private String nickName;
 
     private boolean cancelled;
-
-    private List<PacketInListener> packetInListenerList;
-    private List<PacketOutListener> packetOutListenerList;
-
-    private ChannelPipeline pipeline;
-    private MessageToMessageDecoder<Packet> in;
-    private ChannelOutboundHandlerAdapter out;
-
 
     public User(Player player, UserManager manager) {
 
@@ -49,150 +56,246 @@ public class User implements Tickable {
         this.manager = manager;
         nickName = player.getName();
 
-        packetInListenerList = new ArrayList<>();
-        packetOutListenerList = new ArrayList<>();
+        CraftPlayer craftPlayer = (CraftPlayer)player;
+        Channel channel = craftPlayer.getHandle().playerConnection.networkManager.channel;
+        channels.put(craftPlayer.getUniqueId(), channel);
 
-        PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
+        if(channel.pipeline().get("PacketInjector") != null) {
+            return;
+        }
 
-        pipeline = connection.networkManager.channel.pipeline();
+        channel.pipeline().addAfter("decoder", "PacketInjector", new MessageToMessageDecoder<PacketPlayInUseEntity>() {
 
-        in = new MessageToMessageDecoder<Packet>() {
-
-            public void decode(ChannelHandlerContext context, Packet packet, List<Object> objects) {
-
-                if(disabled) {
-
-                    objects.add(packet);
-                    try {
-                        context.write(objects);
-                    } catch(Exception exc) {
-                        return;
-                    }
-
-                }
-
-                for(PacketInListener packetInlistener : manager.getPacketInListenerList()) {
-
-                    try {
-
-                        if (packetInlistener.handlePacket(packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
-
-                for(PacketInListener packetInlistener : packetInListenerList) {
-
-                    try {
-
-                        if (packetInlistener.handlePacket(packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
+            public void decode(ChannelHandlerContext context, PacketPlayInUseEntity packet, List<Object> objects) {
 
                 objects.add(packet);
 
-                try {
-                    context.write(objects);
-                } catch(Exception exc) {
-                    return;
+                if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUseEntity")) {
+
+                    int id = (int) getValue(packet, "a");
+
+                    for(NPC npc : manager.getOwner().getNpcRegistry().getNpcs()) {
+
+                        if(npc.getEntityId() == id) {
+
+                            PacketPlayInUseEntity.EnumEntityUseAction action = (PacketPlayInUseEntity.EnumEntityUseAction) getValue(packet, "action");
+                            npc.rightClick(player, action);
+
+                        }
+
+                    }
+
                 }
 
             }
 
-        };
+        });
 
-        try {
+        channel.pipeline().addBefore("packet_handler", player.getName(), new ChannelOutboundHandlerAdapter() {
 
-            pipeline.addAfter("decoder", "incoming_handler", in);
-
-        } catch(Exception exc) {
-
-            player.kickPlayer("Wystapil nieznany blad. Prosimy o relog oraz kontakt z administracja.");
-            valid=false;
-            return;
-
-        }
-
-        out = new ChannelOutboundHandlerAdapter() {
-
-            @Override
             public void write(ChannelHandlerContext context, Object packet, ChannelPromise promise) throws Exception {
 
-                if(disabled) {
+                if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayOutSpawnEntity")) {
 
-                    super.write(context, packet, promise);
-                    return;
-                }
+                    int id = (int) getValue(packet, "a");
 
-                for(PacketOutListener packetOutListener : manager.getPacketOutListenerList()) {
+                    for(NPC npc : manager.getOwner().getNpcRegistry().getNpcs()) {
 
-                    try {
+                        if(npc.getHandlerId() == id) {
 
-                        if (packetOutListener.handlePacket(context, connection, (Packet) packet, player)) {
-
-                            return;
+                            npc.handlerSent(player);
 
                         }
 
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
                     }
 
-                }
+                } //else if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayOutEntityMetadata")) {
+//
+//                    int entityId = (int) getValue(packet, "a");
+//
+//                    WorldCache cache = manager.getOwner().getMobManager().getCache().get(player.getWorld());
+//
+//                    if (!cache.getPlayerDisguisedMobs().containsKey(entityId)) {
+//                        super.write(context, packet, promise);
+//                         return;
+//                    }
+//
+//                    List<DataWatcher.WatchableObject> list = (List<DataWatcher.WatchableObject>) getValue(packet, "b");
+//                    List<DataWatcher.WatchableObject> filtered = new ArrayList<>();
+//
+//                    int removed = 0;
+//
+//                    for (DataWatcher.WatchableObject watchableObject : list) {
+//
+//                        int index;
+//
+//                        try {
+//
+//                            Field id = DataWatcher.WatchableObject.class.getDeclaredField("a");
+//                            id.setAccessible(true);
+//                            index = id.getInt(watchableObject);
+//
+//                        } catch (Exception e) {
+//                            removed++;
+//                            continue;
+//                        }
+//
+//                        if ((index > 0 && index <= 10) || index == 15 || (index >= 16 && index <= 18)) {
+//
+//                            filtered.add(watchableObject);
+//
+//                        } else removed++;
+//
+//                    }
+//
+//                    try {
+//
+//                        Field lista = PacketPlayOutEntityMetadata.class.getDeclaredField("b");
+//                        lista.setAccessible(true);
+//                        lista.set(packet, filtered);
+//
+//                    } catch (Exception exc) {}
+//
+//                } else if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayOutSpawnEntityLiving")) {
+//
+//                    int entityId = (int) getValue(packet, "a");
+//
+//                    WorldCache cache = manager.getOwner().getMobManager().getCache().get(player.getWorld());
+//
+//                    if (cache.getPlayerDisguisedMobs().containsKey(entityId)) {
+//
+//                        CachedMob mob = cache.getPlayerDisguisedMobs().get(entityId);
+//
+//                        LivingEntity replacement = mob.getLivingEntity();
+//                        Location loc = replacement.getLocation().clone();
+//                        EntityEquipment eq = replacement.getEquipment();
+//
+//                        MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
+//                        WorldServer world = ((CraftWorld) loc.getWorld()).getHandle();
+//
+//                        int size = (int) Math.ceil(((float) mob.getMob().getName().length()) / 16f);
+//                        String[] name = new String[size];
+//                        for (int i = 0; i < size; i++) {
+//                            name[i] = mob.getMob().getName().substring(i * 16, Math.min((i + 1) * 16, mob.getMob().getName().length()));
+//                        }
+//
+//                        GameProfile profile = new GameProfile(UUID.randomUUID(), name.length > 1 ? name[1] : name[0]);
+//
+//                        profile.getProperties().put("textures", new Property("textures", mob.getMob().getDisguiseData().getSkin().getTexture(), mob.getMob().getDisguiseData().getSkin().getSignature()));
+//
+//                        EntityPlayer entity = new EntityPlayer(server, world, profile, new PlayerInteractManager(world));
+//
+//                        try {
+//
+//                            Field id = Entity.class.getDeclaredField("id");
+//
+//                            id.setAccessible(true);
+//                            id.setInt(entity, replacement.getEntityId());
+//
+//                        } catch (Exception exc) {
+//                            exc.printStackTrace();
+//                        }
+//
+//                        entity.setLocation(loc.getX(),
+//                                loc.getY(),
+//                                loc.getZ(),
+//                                loc.getYaw(),
+//                                loc.getPitch());
+//
+//                        entity.setPosition(loc.getX(),
+//                                loc.getY(),
+//                                loc.getZ());
+//
+//                        try {
+//
+//                            entity.getBukkitEntity().getEquipment().setHelmet(eq.getHelmet().clone());
+//                            entity.getBukkitEntity().getEquipment().setChestplate(eq.getChestplate().clone());
+//                            entity.getBukkitEntity().getEquipment().setLeggings(eq.getLeggings().clone());
+//                            entity.getBukkitEntity().getEquipment().setBoots(eq.getBoots().clone());
+//                            entity.getBukkitEntity().getEquipment().setItemInHand(eq.getItemInHand());
+//
+//                        } catch(Exception ignored) {
+//                            Bukkit.getLogger().warning("Nie mozna bylo ubrac entity w itemy.");
+//                        }
+//
+//                        Entity en_nms = ((CraftLivingEntity)replacement).getHandle();
+//
+//                        List<Packet> eqp = new ArrayList<>();
+//                        for(int i = 0; i < 5; i++) if(en_nms.getEquipment()[i] != null) eqp.add(new PacketPlayOutEntityEquipment(entity.getId(), i, en_nms.getEquipment()[i]));
+//
+//                        PacketPlayOutPlayerInfo infoSpawnPacket = new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, entity);
+//                        PacketPlayOutNamedEntitySpawn spawnPacket = new PacketPlayOutNamedEntitySpawn(entity);
+//
+//                        DataWatcher watcher = entity.getDataWatcher();
+//
+//                        watcher.watch(10, (byte) 127);
+//
+//                        PlayerConnection connection = ((CraftPlayer)player).getHandle().playerConnection;
+//
+//                        connection.sendPacket(infoSpawnPacket);
+//                        connection.sendPacket(spawnPacket);
+//
+//                        if (name.length > 1) {
+//
+//                            TEAM_ID++;
+//
+//                            ScoreboardTeam team = new ScoreboardTeam(((CraftScoreboard) Bukkit.getScoreboardManager().getMainScoreboard()).getHandle(), (TEAM_ID + "k"));
+//                            if (name.length == 3) {
+//                                team.setPrefix(name[0]);
+//                                team.setSuffix(name[2]);
+//                            } else {
+//                                team.setPrefix(name[0]);
+//                            }
+//
+//                            connection.sendPacket(new PacketPlayOutScoreboardTeam(team, 0));
+//                            ArrayList<String> playerToAdd = new ArrayList<>(Collections.singletonList(name[1]));
+//                            connection.sendPacket(new PacketPlayOutScoreboardTeam(team, playerToAdd, 3));
+//
+//                        }
+//
+//                        new BukkitRunnable() {
+//
+//                            public void run (){
+//                                try{eqp.forEach(connection::sendPacket);} catch(Exception ignored) {}
+//                            }
+//
+//                        }.runTaskLater(MantraLibs.MAIN, 3);
+//
+//                        return;
+//                    }
+//
+//
+//                } else if (packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayOutEntityStatus")) {
+//
+//                    byte stat = (byte) getValue(packet, "b");
+//                    int entityID = (int) getValue(packet, "a");
+//
+//                    WorldCache cache = manager.getOwner().getMobManager().getCache().get(player.getWorld());
+//
+//                    if (cache.getPlayerDisguisedMobs().containsKey(entityID)) {
+//                        if (stat == 3) {
+//
+//                            Packet p = new PacketPlayOutEntityDestroy(entityID);
+//
+//                            Bukkit.getScheduler().runTaskLater(MantraLibs.MAIN, new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ((CraftPlayer)player).getHandle().playerConnection.sendPacket(p);
+//                                }
+//                            }, 30);
+//
+//                            return;
+//                        }
+//                    }
+//
+//
+//                }
 
-                for(PacketOutListener packetOutListener : packetOutListenerList) {
-
-                    try {
-
-                        if (packetOutListener.handlePacket(context, connection, (Packet) packet, player)) {
-
-                            return;
-
-                        }
-
-                    } catch(Exception exc) {
-
-                        exc.printStackTrace();
-
-                    }
-
-                }
-
-                try {
-
-                    super.write(context, packet, promise);
-
-                } catch(Exception exc) {
-
-                    return;
-
-                }
+                super.write(context, packet, promise);
 
             }
 
-        };
-
-        pipeline.addBefore("packet_handler", "custom_handler", out);
+        });
 
     }
 
@@ -200,50 +303,53 @@ public class User implements Tickable {
 
        cancelled = true;
 
+        try{
+
+            Channel channel = ((CraftPlayer)e.getPlayer()).getHandle().playerConnection.networkManager.channel;
+
+            try {
+
+                channel.eventLoop().submit(() -> {
+
+                    channel.pipeline().remove(e.getPlayer().getName());
+                    channel.pipeline().remove("PacketInjector");
+                    return null;
+
+                });
+
+            }catch(Exception exc) {
+
+            }
+
+            channels.remove(e.getPlayer().getUniqueId());
+
+        }catch (Exception ex){
+
+            ex.printStackTrace();
+        }
+
+
     }
-
-    public void registerPacketInListener(PacketInListener listener) {
-
-        packetInListenerList.add(listener);
-
-    }
-
-    public void registerPacketOutListener(PacketOutListener listener) {
-
-        packetOutListenerList.add(listener);
-
-    }
-
-    @Override
-    public void run() {
-
-        packetInListenerList.removeIf(packetInListener -> {
-            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
-        });
-
-        packetOutListenerList.removeIf(packetInListener -> {
-            return (packetInListener instanceof Removeable && !((Removeable) packetInListener).isActive());
-        });
-
-    }
-
-    @Override
-    public int getPeriod() {
-        return 20;
-    }
-
     public void disable() {
 
         disabled = true;
 
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
+
+    private Object getValue(Object instance, String name) {
+        Object result = null;
+
+        try {
+            Field field = instance.getClass().getDeclaredField(name);
+            field.setAccessible(true);
+            result = field.get(instance);
+            field.setAccessible(false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
-    public boolean isValid(){
-        return valid;
-    }
 }

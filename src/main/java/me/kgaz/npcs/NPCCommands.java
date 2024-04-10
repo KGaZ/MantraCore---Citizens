@@ -14,9 +14,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class NPCCommands implements CommandExecutor, Listener {
 
@@ -48,8 +46,44 @@ public class NPCCommands implements CommandExecutor, Listener {
 
     }
 
+    private List<Player> cooldown = new ArrayList<>();
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+
+        if(cmd.getName().equalsIgnoreCase("npcfix")) {
+
+            if(sender instanceof Player) {
+
+                Player player = (Player) sender;
+                if(cooldown.contains(player)) {
+
+                    sender.sendMessage("§aPoczekaj chwile przed uzyciem tej komendy ponownie!");
+                    return false;
+
+                }
+
+                cooldown.add(player);
+
+                new BukkitRunnable() {
+
+                    public void run() {
+
+                        cooldown.remove(player);
+
+                    }
+
+                }.runTaskLater(main, 20*60);
+
+                for(NPC npc : main.getNpcRegistry().getNpcs()) {
+
+                    npc.refresh(player);
+
+                }
+
+            }
+
+        }
 
         if(cmd.getName().equalsIgnoreCase("npc") && sender instanceof Player) {
 
