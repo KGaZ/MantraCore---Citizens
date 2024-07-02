@@ -1,6 +1,6 @@
 package me.kgaz.npcs;
 
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
@@ -19,10 +19,10 @@ import java.util.*;
 public class NPCCommands implements CommandExecutor, Listener {
 
     private Map<Player, NPC> selected = new HashMap<>();
-    private MantraLibs main;
+    private KNPC main;
     private String[] commands;
 
-    public NPCCommands(MantraLibs main) {
+    public NPCCommands(KNPC main) {
 
         this.main = main;
         main.registerListener(this);
@@ -51,39 +51,39 @@ public class NPCCommands implements CommandExecutor, Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
-        if(cmd.getName().equalsIgnoreCase("npcfix")) {
-
-            if(sender instanceof Player) {
-
-                Player player = (Player) sender;
-                if(cooldown.contains(player)) {
-
-                    sender.sendMessage("§aPoczekaj chwile przed uzyciem tej komendy ponownie!");
-                    return false;
-
-                }
-
-                cooldown.add(player);
-
-                new BukkitRunnable() {
-
-                    public void run() {
-
-                        cooldown.remove(player);
-
-                    }
-
-                }.runTaskLater(main, 20*60);
-
-                for(NPC npc : main.getNpcRegistry().getNpcs()) {
-
-                    npc.refresh(player);
-
-                }
-
-            }
-
-        }
+//        if(cmd.getName().equalsIgnoreCase("npcfix")) {
+//
+//            if(sender instanceof Player) {
+//
+//                Player player = (Player) sender;
+//                if(cooldown.contains(player)) {
+//
+//                    sender.sendMessage("§aPoczekaj chwile przed uzyciem tej komendy ponownie!");
+//                    return false;
+//
+//                }
+//
+//                cooldown.add(player);
+//
+//                new BukkitRunnable() {
+//
+//                    public void run() {
+//
+//                        cooldown.remove(player);
+//
+//                    }
+//
+//                }.runTaskLater(main, 20*60);
+//
+//                for(NPC npc : main.getNpcRegistry().getNpcs()) {
+//
+//                    npc.refresh(player);
+//
+//                }
+//
+//            }
+//
+//        }
 
         if(cmd.getName().equalsIgnoreCase("npc") && sender instanceof Player) {
 

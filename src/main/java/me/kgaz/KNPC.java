@@ -1,8 +1,8 @@
 package me.kgaz;
 
-import me.kgaz.betterDisguises.DisguisePacketManager;
 import me.kgaz.npcs.NPCCommands;
 import me.kgaz.npcs.NPCRegistry;
+import me.kgaz.npcs.nomand.FixManager;
 import me.kgaz.tasks.GlobalTaskManager;
 import me.kgaz.users.UserManager;
 import me.kgaz.util.Loadable;
@@ -11,14 +11,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import pl.nomand.mantracore.mobs.MobManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MantraLibs extends JavaPlugin {
+public class KNPC extends JavaPlugin {
 
-    public static MantraLibs MAIN;
+    public static KNPC MAIN;
 
     private Listener[] listeners;
     private Loadable[] loadables;
@@ -26,10 +25,9 @@ public class MantraLibs extends JavaPlugin {
     private GlobalTaskManager gtm;
     private UserManager manager;
     private NPCRegistry registry;
-    private DisguisePacketManager disguises;
     private List<ArmorStand> toRemove;
 
-    public static MantraLibs getInstance() {
+    public static KNPC getInstance() {
 
         return MAIN;
 
@@ -47,16 +45,7 @@ public class MantraLibs extends JavaPlugin {
         registry = new NPCRegistry(this);
         toRemove = new ArrayList<>();
 
-        disableTasks.add(new Task() {
-
-            @Override
-            public void run() {
-
-                toRemove.forEach(ArmorStand::remove);
-
-            }
-
-        });
+        disableTasks.add(() -> toRemove.forEach(ArmorStand::remove));
 
     }
 
@@ -76,7 +65,9 @@ public class MantraLibs extends JavaPlugin {
         NPCCommands cmds = new NPCCommands(this);
 
         getCommand("npc").setExecutor(cmds);
-        getCommand("npcfix").setExecutor(cmds);
+//        getCommand("npcfix").setExecutor(cmds);
+
+        new FixManager(this);
 
         System.out.println("Enabled Plugin Successfully!");
 
@@ -230,24 +221,6 @@ public class MantraLibs extends JavaPlugin {
     public NPCRegistry getNpcRegistry() {
 
         return registry;
-
-    }
-
-    public DisguisePacketManager getNewDisguises(){
-        return disguises;
-    }
-
-    private MobManager mobManager = null;
-
-    public void setMobManager(MobManager manager) {
-
-        this.mobManager = manager;
-
-    }
-
-    public MobManager getMobManager() {
-
-        return mobManager;
 
     }
 

@@ -1,11 +1,11 @@
 package me.kgaz.util;
 
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 
 public interface Loadable {
 
-    public default void onLoad(MantraLibs main) {}
+    public default void onLoad(KNPC main) {}
 
-    public default void onDisable(MantraLibs main) {}
+    public default void onDisable(KNPC main) {}
 
 }

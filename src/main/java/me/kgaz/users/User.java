@@ -1,30 +1,12 @@
 package me.kgaz.users;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
 import io.netty.channel.*;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import me.kgaz.MantraLibs;
 import me.kgaz.npcs.NPC;
-import me.kgaz.tasks.Tickable;
-import me.kgaz.util.PacketInListener;
-import me.kgaz.util.PacketOutListener;
-import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.*;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_8_R3.scoreboard.CraftScoreboard;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.scheduler.BukkitRunnable;
-import pl.nomand.mantracore.mobs.CachedMob;
-import pl.nomand.mantracore.mobs.WorldCache;
 
 import java.lang.reflect.Field;
 import java.util.*;

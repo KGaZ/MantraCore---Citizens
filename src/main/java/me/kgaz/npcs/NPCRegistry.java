@@ -1,6 +1,6 @@
 package me.kgaz.npcs;
 
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 import me.kgaz.util.Task;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -18,10 +18,10 @@ import java.util.Map;
 public class NPCRegistry implements Task {
 
     private Map<Integer, NPC> registry;
-    private MantraLibs main;
+    private KNPC main;
     private int lastId;
 
-    public NPCRegistry(MantraLibs main) {
+    public NPCRegistry(KNPC main) {
 
         this.main = main;
 

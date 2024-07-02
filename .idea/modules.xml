@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/MantraLibs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/MantraLibs.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/me.kgaz.MantraLibs.main.iml" filepath="$PROJECT_DIR$/.idea/modules/me.kgaz.MantraLibs.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/KNPC.main.iml" filepath="$PROJECT_DIR$/.idea/modules/KNPC.main.iml" />
     </modules>
   </component>
 </project>

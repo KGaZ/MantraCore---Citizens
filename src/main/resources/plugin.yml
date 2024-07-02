@@ -1,9 +1,8 @@
-main: me.kgaz.MantraLibs
-version: Bywaj mantro
-name: MantraLibs
+main: me.kgaz.KNPC
+version: 2.0N
+name: KNPC
 author: KGaZ
 depend: [Multiverse-Core]
 load: POSTWORLD
 commands:
   npc:
-  npcfix:

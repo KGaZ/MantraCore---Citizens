@@ -1,6 +1,6 @@
 package me.kgaz.users;
 
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 import me.kgaz.tasks.Tickable;
 import me.kgaz.util.PacketInListener;
 import me.kgaz.util.PacketOutListener;
@@ -22,9 +22,9 @@ public class UserManager implements Listener, Tickable {
     private Map<String, User> users = new HashMap<>();
     private List<PacketInListener> packetInListenerList;
     private List<PacketOutListener> packetOutListenerList;
-    public MantraLibs owner;
+    public KNPC owner;
 
-    public UserManager(MantraLibs owner) {
+    public UserManager(KNPC owner) {
 
         this.owner = owner;
 
@@ -121,7 +121,7 @@ public class UserManager implements Listener, Tickable {
 
     }
 
-    public MantraLibs getOwner() {
+    public KNPC getOwner() {
 
         return owner;
 

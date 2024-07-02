@@ -2,7 +2,7 @@ package me.kgaz.npcs;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 import org.bukkit.Bukkit;
 
 import java.io.InputStreamReader;
@@ -10,7 +10,7 @@ import java.net.URL;
 
 public class SkinFetcher {
 
-    public SkinFetcher(MantraLibs main, String nick, FetchResult result) {
+    public SkinFetcher(KNPC main, String nick, FetchResult result) {
 
         Thread fetchThread = new Thread() {
 

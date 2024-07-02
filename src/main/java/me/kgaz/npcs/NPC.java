@@ -2,11 +2,8 @@ package me.kgaz.npcs;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import io.netty.channel.ChannelHandlerContext;
-import me.kgaz.MantraLibs;
+import me.kgaz.KNPC;
 import me.kgaz.tasks.Tickable;
-import me.kgaz.util.PacketInListener;
-import me.kgaz.util.PacketOutListener;
 import me.kgaz.util.ParticleEffect;
 import me.kgaz.util.Removeable;
 import net.minecraft.server.v1_8_R3.*;
@@ -15,23 +12,18 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_8_R3.scoreboard.CraftScoreboard;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
-import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 public class NPC implements Listener, Tickable, Removeable {
@@ -61,14 +53,14 @@ public class NPC implements Listener, Tickable, Removeable {
     private CustomSecondLine modifier;
     private EntityArmorStand secondLineEntity;
 
-    private final MantraLibs main;
+    private final KNPC main;
     private DisguiseType disguise;
 
     private ArmorStand holder;
     private org.bukkit.inventory.ItemStack[] items;
     public boolean editing;
 
-    public NPC(int id, YamlConfiguration yml, MantraLibs main) {
+    public NPC(int id, YamlConfiguration yml, KNPC main) {
 
         String path = "npcs."+id;
 
@@ -111,7 +103,7 @@ public class NPC implements Listener, Tickable, Removeable {
 
     }
 
-    public NPC(int id, MantraLibs main, Location loc, String name) {
+    public NPC(int id, KNPC main, Location loc, String name) {
 
         this.id = id;
         this.main = main;
@@ -152,40 +144,28 @@ public class NPC implements Listener, Tickable, Removeable {
     }
 
     public void setName(String name) {
-
         this.name = name;
         longName = name.length() > 16 || name.startsWith("§1") || name.startsWith("§2") || name.startsWith("§3") || name.startsWith("§4");
-
     }
 
     public int getCitizenId() {
-
         return id;
-
     }
 
     public void setVisibilityMask(VisibilityMask mask) {
-
         this.mask = mask;
-
     }
 
     public void removeVisibilityMask() {
-
         this.mask = null;
-
     }
 
     public void setVisibleByDefault(boolean bool) {
-
         this.visibleByDefault = bool;
-
     }
 
     public void setCustomLineModifier(CustomSecondLine csm) {
-
         this.modifier = csm;
-
     }
 
     public void setDisguise(DisguiseType type) {
@@ -195,7 +175,6 @@ public class NPC implements Listener, Tickable, Removeable {
         if(removed) return;
 
         this.disguise = type;
-
     }
 
     public void removeCustomLineModifier() {
@@ -205,7 +184,6 @@ public class NPC implements Listener, Tickable, Removeable {
         this.modifier = null;
 
         if(secondLine != null) setSecondLine(secondLine);
-
     }
 
     public void refreshSecondLine(Player player) {
@@ -442,25 +420,6 @@ public class NPC implements Listener, Tickable, Removeable {
 
             }
         });
-
-    }
-
-    public void copySkin(Player player) {
-
-        if(removed) return;
-
-        try {
-
-            Property property = ((CraftPlayer)player).getProfile().getProperties().get("textures").iterator().next();
-            this.texture = property.getValue();
-            this.signature = property.getSignature();
-
-        } catch(Exception exc) {
-
-            texture = null;
-            signature = null;
-
-        }
 
     }
 
@@ -760,61 +719,42 @@ public class NPC implements Listener, Tickable, Removeable {
     }
 
     private PacketPlayOutEntity.PacketPlayOutEntityLook getRotationPacket(float yaw, float pitch) {
-
         return new PacketPlayOutEntity.PacketPlayOutEntityLook(entity.getId(), (byte) ((yaw/256f) * 360f), (byte) ((pitch/256f) * 360f), true);
-
     }
 
     private PacketPlayOutEntityHeadRotation getHeadRotation(float yaw) {
-
         return new PacketPlayOutEntityHeadRotation(entity, (byte) ((yaw/256f) * 360f));
-
     }
 
     private PacketPlayOutNamedEntitySpawn getSpawnPacket() {
-
         return new PacketPlayOutNamedEntitySpawn((EntityPlayer) entity);
-
     }
 
     private PacketPlayOutPlayerInfo getSpawnInfoPacket() {
-
         return new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, (EntityPlayer) entity);
-
     }
 
     private PacketPlayOutEntityDestroy getArmorStandDestroyPacket() {
-
         return new PacketPlayOutEntityDestroy(secondLineEntity.getId());
-
     }
 
     private PacketPlayOutEntityDestroy getDestroyPacket() {
-
         return new PacketPlayOutEntityDestroy(entity.getId());
-
     }
 
     private PacketPlayOutEntityMetadata getMetaDataPacket() {
-
         DataWatcher watcher = entity.getDataWatcher();
-
         watcher.watch(10, (byte) 127);
 
         return new PacketPlayOutEntityMetadata(entity.getId(), watcher, true);
-
     }
 
     private PacketPlayOutPlayerInfo getRemoveInfoPacket(){
-
         return new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, (EntityPlayer) entity);
-
     }
 
     private void sendDespawnData(Player player) {
-
         ((CraftPlayer)player).getHandle().playerConnection.sendPacket(getDestroyPacket());
-
     }
 
     public void playArmAnimation() {
