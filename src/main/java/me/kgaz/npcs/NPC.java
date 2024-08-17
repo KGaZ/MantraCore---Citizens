@@ -190,11 +190,17 @@ public class NPC implements Listener, Tickable, Removeable {
 
         DataWatcher watcher = new DataWatcher(secondLineEntity);
 
-        watcher.a(2, modifier.onSendingSecondLine(player, secondLine));
+        try {
 
-        PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
+            watcher.a(2, modifier.onSendingSecondLine(player, secondLine));
 
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
+
+            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+
+        } catch (Exception e) {
+            Bukkit.getLogger().warning("Nie mozna odswiezyc holo npc: "+getName()+" dla "+player.getName()+"!");
+        }
 
     }
 

@@ -67,6 +67,9 @@ public class FixManager implements Listener {
 
     // Usuwa biezace npc z pamieci dla gracza i wczytuje nowe npc z aktualnego swiata.
     private void refresh(Player player) {
+        if (!cache.containsKey(player))
+            return;
+
         Location location = player.getLocation();
 
         cache.get(player).clear();
