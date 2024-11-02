@@ -188,20 +188,65 @@ public class NPC implements Listener, Tickable, Removeable {
 
     public void refreshSecondLine(Player player) {
 
+        if (modifier == null) // fix by Nomand
+            return;
+
         DataWatcher watcher = new DataWatcher(secondLineEntity);
 
-        try {
+        watcher.a(2, modifier.onSendingSecondLine(player, secondLine));
 
-            watcher.a(2, modifier.onSendingSecondLine(player, secondLine));
+        PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
 
-            PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
 
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+    }
 
-        } catch (Exception e) {
-            Bukkit.getLogger().warning("Nie mozna odswiezyc holo npc: "+getName()+" dla "+player.getName()+"!");
+    // Metoda by Nomand
+    public void setSecondLineToPlayer(Player player, String line) {
+
+        if (removed || !seenBy.contains(player))
+            return;
+
+        if(spawned) {
+
+            if(secondLine == null) {
+
+                secondLine = line;
+
+                secondLineEntity = new EntityArmorStand(((CraftWorld)location.getWorld()).getHandle(), location.getX(), location.getY()+disguise.getYModifier(), location.getZ());
+                secondLineEntity.setGravity(false);
+                secondLineEntity.setInvisible(true);
+                secondLineEntity.setCustomName(secondLine);
+                secondLineEntity.setCustomNameVisible(true);
+
+                ((CraftPlayer)player).getHandle().playerConnection.sendPacket(new PacketPlayOutSpawnEntityLiving(secondLineEntity));
+
+            } else secondLine = line;
+
+            if(line == null) {
+                removeSecondLine();
+                return;
+            }
+
+            if(modifier != null) { // teoretycznie tutaj zawsze nie jest nullem, aczkolwiek moze byc blad miedzy tickami jak cos zmienie
+                new BukkitRunnable() {
+                    public void run() {
+                        DataWatcher watcher = new DataWatcher(secondLineEntity);
+                        watcher.a(2, modifier.onSendingSecondLine(player, secondLine));
+                        PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
+                        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+                    }
+                }.runTaskLaterAsynchronously(main, 1);
+            } else {
+                secondLineEntity.setCustomName(line);
+                PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), secondLineEntity.getDataWatcher(), true);
+                ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet);
+            }
+
+            return;
         }
 
+        secondLine = line;
     }
 
     public void setSecondLine(String line) {
@@ -242,8 +287,6 @@ public class NPC implements Listener, Tickable, Removeable {
                     PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadata(secondLineEntity.getId(), watcher, true);
 
                     ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
-
-
                 }
 
             } else {
@@ -693,7 +736,7 @@ public class NPC implements Listener, Tickable, Removeable {
 
                     public void run (){
 
-                        try{eqp.forEach(connection::sendPacket);} catch(Exception exc) {}
+                        try{eqp.forEach(connection::sendPacket);} catch(Exception ignored) {}
 
                     }
 
@@ -709,7 +752,7 @@ public class NPC implements Listener, Tickable, Removeable {
 
                             connection.sendPacket(new PacketPlayOutSpawnEntityLiving(secondLineEntity));
 
-                            if (modifier != null) setSecondLine(secondLine);
+                            if (modifier != null) setSecondLineToPlayer(player, secondLine);
 
                         }
 
