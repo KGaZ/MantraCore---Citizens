@@ -2,6 +2,8 @@ package me.kgaz.npcs;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import lombok.Getter;
+import lombok.Setter;
 import me.kgaz.KNPC;
 import me.kgaz.tasks.Tickable;
 import me.kgaz.util.ParticleEffect;
@@ -34,30 +36,42 @@ public class NPC implements Listener, Tickable, Removeable {
     private boolean removed;
     private boolean shouldSave;
 
+    @Getter
     private Location location;
+    @Getter
     private String name;
+    @Getter
     private boolean visibleByDefault;
+    @Setter
+    @Getter
     private boolean lookAtPlayers;
     private final List<Player> seenBy;
     private VisibilityMask mask;
 
+    @Getter
     private boolean spawned;
+    @Getter
     private EntityLiving entity;
+    @Getter
     private String texture;
+    @Getter
     private String signature;
 
     private boolean longName;
     private String[] names;
 
+    @Getter
     private String secondLine;
     private CustomSecondLine modifier;
     private EntityArmorStand secondLineEntity;
 
     private final KNPC main;
+    @Getter
     private DisguiseType disguise;
 
-    private ArmorStand holder;
-    private org.bukkit.inventory.ItemStack[] items;
+    @Getter
+    private final ArmorStand holder;
+    private final org.bukkit.inventory.ItemStack[] items;
     public boolean editing;
 
     public NPC(int id, YamlConfiguration yml, KNPC main) {
@@ -345,13 +359,10 @@ public class NPC implements Listener, Tickable, Removeable {
                     Vector difference;
 
                     try {
-
-                        difference = player.getLocation().subtract(entity.getBukkitEntity().getLocation()).toVector().normalize();
-
-                    }catch(Exception exc) {
-
+                        difference = player.getLocation().subtract(entity.getBukkitEntity().getLocation()).toVector().normalize(); // Serwer Crash Mimo trycatch
+                    } catch(Exception exc) {
+                        exc.printStackTrace();
                         continue;
-
                     }
 
                     if(player.getLocation().distanceSquared(location) <= 60) {
@@ -382,21 +393,13 @@ public class NPC implements Listener, Tickable, Removeable {
     }
 
     public void handlerSent(Player target) {
-
         if(spawned) {
-
             if(id == NPC.this.holder.getEntityId()) {
-
                 if(seenBy.contains(target)) {
-
                     sendSpawnPackets(target);
-
                 }
-
             }
-
         }
-
     }
 
     public void rightClick(Player target, PacketPlayInUseEntity.EnumEntityUseAction action) {
@@ -602,21 +605,6 @@ public class NPC implements Listener, Tickable, Removeable {
     private void sendSpawnPackets(Player player) {
 
         if (removed) return;
-//
-//        if(!sentData.contains(player)) {
-//
-//            new BukkitRunnable() {
-//
-//                public void run() {
-//
-//                    sentData.remove(player);
-//                }
-//
-//            }.runTaskLater(main, 30);
-//
-//            sentData.add(player);
-//
-//        }
 
         sendDespawnData(player);
 
@@ -640,13 +628,9 @@ public class NPC implements Listener, Tickable, Removeable {
                         boolean skip = false;
 
                         try {
-
                             difference = player.getLocation().subtract(entity.getBukkitEntity().getLocation()).toVector().normalize();
-
-                        }catch(Exception exc) {
-
+                        } catch(Exception exc) {
                             skip = true;
-
                         }
 
                         if(!skip) if (player.getLocation().distanceSquared(location) <= 60) {
@@ -824,14 +808,21 @@ public class NPC implements Listener, Tickable, Removeable {
 
     }
 
-    private List<Player> sentData = new ArrayList<>();
+//    private final List<Player> sentData = new ArrayList<>(); // FIX BY NOMAND
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent e) {
+        if (removed || e.getCause() == PlayerTeleportEvent.TeleportCause.UNKNOWN) return;
 
-        if(removed || sentData.contains(e.getPlayer())) return;
+//        boolean unknown = e.getCause() == PlayerTeleportEvent.TeleportCause.UNKNOWN;
+//
+//        if (unknown && sentData.contains(e.getPlayer())) // FIX BY NOMAND
+//            return;
 
-        if(e.getPlayer().getWorld() == location.getWorld() && seenBy.contains(e.getPlayer())) {
+        if (e.getPlayer().getWorld() == location.getWorld() && seenBy.contains(e.getPlayer())) {
+//            if (unknown && !sentData.contains(e.getPlayer())) // FIX BY NOMAND
+//                sentData.add(e.getPlayer());
+
             sendSpawnPackets(e.getPlayer());
         }
 
@@ -843,7 +834,6 @@ public class NPC implements Listener, Tickable, Removeable {
         if(removed) return;
 
         sendSpawnPackets(e.getPlayer());
-
     }
 
     @EventHandler
@@ -854,76 +844,38 @@ public class NPC implements Listener, Tickable, Removeable {
         if(e.getPlayer().getWorld() == location.getWorld() && seenBy.contains(e.getPlayer())) {
             sendSpawnPackets(e.getPlayer());
         }
-
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
 
-//        sentData.add(e.getPlayer());
-//        new BukkitRunnable() {
-//
-//            public void run() {
-//
-//                sentData.remove(e.getPlayer());
-//
-//            }
-//
-//        }.runTaskLater(main, 25);
-
         if(removed) return;
         if(visibleByDefault) {
 
-            if(mask != null) {
-
+            if(mask != null)
                 if(!mask.shouldSee(e.getPlayer())) return;
 
-            }
-
             seenBy.add(e.getPlayer());
-
+            sendSpawnPackets(e.getPlayer());
         }
-
     }
-
-//    @EventHandler
-//    public void onChunkLoad(ChunkLoadEvent e) {
-//
-//        if(e.getChunk().getWorld() != location.getWorld()) return;
-//
-//        for(Entity entity : e.getChunk().getEntities()) {
-//
-//            if(entity == holder) {
-//
-//                seenBy.stream().filter(player -> player.getWorld() == location.getWorld()).forEach(this::sendSpawnPackets);
-//
-//            }
-//
-//        }
-//
-//    }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
-
         if(removed) return;
 
+//        sentData.remove(e.getPlayer()); // FIX BY NOMAND
         seenBy.remove(e.getPlayer());
-
     }
 
     public boolean isRemoved() {
-
         return removed;
-
     }
 
     public boolean canBeSeenBy(Player player) {
-
         if(removed) return false;
 
         return seenBy.contains(player);
-
     }
 
     public void hideFrom(Player player) {
@@ -957,11 +909,9 @@ public class NPC implements Listener, Tickable, Removeable {
     }
 
     public void saveOnDisable() {
-
         if(removed) return;
 
         shouldSave = true;
-
     }
 
     void save(YamlConfiguration yml) {
@@ -993,54 +943,8 @@ public class NPC implements Listener, Tickable, Removeable {
         return !removed;
     }
 
-    public String getName() {
-
-        return name;
-
-    }
-
-    public void setLookAtPlayers(boolean lookAtPlayers) {
-        this.lookAtPlayers = lookAtPlayers;
-    }
-
     public boolean shouldSave() {
         return shouldSave;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public boolean isVisibleByDefault() {
-        return visibleByDefault;
-    }
-
-    public boolean isLookAtPlayers() {
-        return lookAtPlayers;
-    }
-
-    public boolean isSpawned() {
-        return spawned;
-    }
-
-    public EntityLiving getEntity() {
-        return entity;
-    }
-
-    public String getTexture() {
-        return texture;
-    }
-
-    public String getSignature() {
-        return signature;
-    }
-
-    public String getSecondLine() {
-        return secondLine;
-    }
-
-    public DisguiseType getDisguise() {
-        return disguise;
     }
 
     public void setLocation(Location location) {
@@ -1081,35 +985,20 @@ public class NPC implements Listener, Tickable, Removeable {
 
     }
 
-    public ArmorStand getHolder() {
-        return holder;
-    }
-
     public void deleteArmorStand() {
-
         holder.remove();
-
     }
 
     public void dspawn(Player player) {
-
         sendSpawnPackets(player);
-
     }
 
     public int getHandlerId() {
-
         return holder.getEntityId();
-
     }
 
     public void refresh(Player player) {
-
-        if(player.getWorld() == location.getWorld()) {
-
+        if (player.getWorld() == location.getWorld())
             sendSpawnPackets(player);
-
-        }
-
     }
 }
