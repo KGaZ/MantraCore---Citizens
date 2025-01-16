@@ -998,7 +998,11 @@ public class NPC implements Listener, Tickable, Removeable {
     }
 
     public void refresh(Player player) {
-        if (player.getWorld() == location.getWorld())
+        if (player.getWorld() == location.getWorld()) {
+            if (!visibleByDefault && !seenBy.contains(player))
+                return;
+
             sendSpawnPackets(player);
+        }
     }
 }
